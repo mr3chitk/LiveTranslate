@@ -18,7 +18,7 @@ asr:
   # Device: cuda or cpu
   device: "cuda"
   # Compute type: float16, int8_float16, int8
-  compute_type: "float16"
+  compute_type: "int8"
   # Language: auto, en, ja, zh, ko, etc.
   language: "auto"
   # Minimum speech duration (seconds) before sending to ASR

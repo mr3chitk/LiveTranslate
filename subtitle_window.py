@@ -638,7 +638,7 @@ class SubtitleWindow(QWidget):
             return
         if self._height_anim and self._height_anim.state() != QPropertyAnimation.State.Stopped:
             self._height_anim.stop()
-        self.move(self.x(), self.y() - (new_h - old_h) // 2)
+        self.move(self.x(), self.y()) #  - (new_h - old_h) // 2
         self.setFixedHeight(new_h)
         self._clamp_to_screen()
         self.position_changed.emit()
@@ -651,7 +651,7 @@ class SubtitleWindow(QWidget):
         if self._height_anim and self._height_anim.state() != QPropertyAnimation.State.Stopped:
             self._height_anim.stop()
 
-        target_y = self.y() - (new_h - old_h) // 2
+        target_y = self.y() # - (new_h - old_h) // 2
         self.setMinimumHeight(min(old_h, new_h))
         self.setMaximumHeight(max(old_h, new_h))
 

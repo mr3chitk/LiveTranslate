@@ -132,6 +132,7 @@ class ASREngine:
             beam_size=5,
             vad_filter=False,
             word_timestamps=word_timestamps,
+            repetition_penalty=1.2,
         )
 
         text_parts = []
@@ -143,7 +144,7 @@ class ASREngine:
                     words.append({"word": w.word, "start": w.start, "end": w.end})
 
         full_text = " ".join(text_parts).strip()
-        if not full_text:
+        if not full_text or full_text == "ご視聴ありがとうございました":
             return None
 
         detected_lang = info.language

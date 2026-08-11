@@ -18,6 +18,12 @@ if not exist ".venv\.livetranslate-ready" (
     exit /b 1
 )
 
+set "TRANSLATOR_PATH=C:\Users\PC\crisp-caption\scripts\start-translation-server-windows.bat"
+if exist "%TRANSLATOR_PATH%" (
+    echo [LLM] Starting Translator...
+    start /min "Translator" cmd /c "%TRANSLATOR_PATH%"
+)
+
 echo Starting LiveTranslate...
 .venv\Scripts\python.exe main.py
 if errorlevel 1 (
