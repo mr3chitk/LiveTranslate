@@ -51,7 +51,7 @@ class VADProcessor:
             use_gpu = bool(torch.cuda.is_available())
             vad_config = FireRedStreamVadConfig(
                 use_gpu=use_gpu,
-                smooth_window_size=3,
+                smooth_window_size=5,
                 speech_threshold=self.threshold,
                 pad_start_frame=5,
                 min_speech_frame=8,
