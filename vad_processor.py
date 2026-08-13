@@ -15,7 +15,7 @@ class VADProcessor:
     Added FireRedVAD support. Silero remains the default for backward compatibility.
     """
 
-    _FIRERED_INPUT_SCALER = 5000  # Input scaler for FireredVAD
+    _FIRERED_INPUT_SCALER = 10000  # Input scaler for FireredVAD
 
     def __init__(
         self,
@@ -51,7 +51,7 @@ class VADProcessor:
             use_gpu = bool(torch.cuda.is_available())
             vad_config = FireRedStreamVadConfig(
                 use_gpu=use_gpu,
-                smooth_window_size=5,
+                smooth_window_size=3,
                 speech_threshold=self.threshold,
                 pad_start_frame=5,
                 min_speech_frame=8,
