@@ -717,6 +717,24 @@ def download_asr(engine, model_size="medium", hub="ms", proxy="system"):
     log.info(f"ASR model downloaded: {engine}")
 
 
+def download_asr_direct(model_id, hub="hf", proxy="system"):
+    resolved = str(MODELS_DIR.resolve())
+    with _proxy_env(proxy):
+        if hub == "ms":
+            from modelscope import snapshot_download
+
+            ms_cache = os.path.join(resolved, "modelscope")
+            log.info(f"Downloading {model_id} from ModelScope...")
+            snapshot_download(model_id=model_id, cache_dir=ms_cache)
+        else:
+            from huggingface_hub import snapshot_download
+            print(model_id)
+            hf_cache = os.path.join(resolved, "huggingface", "hub")
+            log.info(f"Downloading {model_id} from HuggingFace...")
+            snapshot_download(repo_id=model_id, cache_dir=hf_cache)
+    log.info(f"ASR model downloaded: {model_id}")
+
+
 def neutralize_funasr_requirements(model_dir) -> None:
     """Skip FunASR's load-time `pip install -r requirements.txt`.
 

@@ -1,3 +1,8 @@
+# WHAT ARE NEW?
+- FireredVAD
+- model_custom_download.bat for fast custom model downloading. Recommended models are whisper-ja-anime-v0.3.
+- Better configs (no sloppy subtitle y axis, int8 by default for perf,...)
+
 # LiveTranslate
 
 **English** | [中文](README_zh.md)
