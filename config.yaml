@@ -5,8 +5,8 @@ audio:
   device: null
   # Sample rate for capture
   sample_rate: 16000
-  # Audio chunk duration in seconds for VAD processing (32ms = Silero VAD native window)
-  chunk_duration: 0.032
+  # Audio chunk duration in seconds for VAD processing (32ms for Silero VAD, 25ms for Firered VAD)
+  chunk_duration: 0.025
 
 asr:
   # ASR engine: whisper, funasr, anime-whisper

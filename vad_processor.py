@@ -10,7 +10,12 @@ log = logging.getLogger("LiveTranslate.VAD")
 
 
 class VADProcessor:
-    """Voice Activity Detection with multiple modes."""
+    """Voice Activity Detection with multiple modes.
+
+    Added FireRedVAD support. Silero remains the default for backward compatibility.
+    """
+
+    _FIRERED_INPUT_SCALER = 5000  # Input scaler for FireredVAD
 
     def __init__(
         self,
@@ -18,7 +23,7 @@ class VADProcessor:
         threshold=0.50,
         min_speech_duration=1.0,
         max_speech_duration=15.0,
-        chunk_duration=0.032,
+        chunk_duration=0.032
     ):
         self.sample_rate = sample_rate
         self.threshold = threshold
@@ -26,7 +31,45 @@ class VADProcessor:
         self.min_speech_samples = int(min_speech_duration * sample_rate)
         self.max_speech_samples = int(max_speech_duration * sample_rate)
         self._chunk_duration = chunk_duration
-        self.mode = "silero"  # "silero", "energy", "disabled"
+        self.mode = "silero"  # "silero", "firered", "energy", "disabled"
+
+        # --- NEW: FireRedVAD Model Loading ---
+        try:
+            from fireredvad import FireRedStreamVad, FireRedStreamVadConfig
+            from model_manager import FIRERED_CACHE_DIR, _firered_cache_invalid
+
+            if _firered_cache_invalid():
+                log.info("FireRedVAD: no local cache found, downloading...")
+
+                from model_manager import download_fireredvad
+
+                if not download_fireredvad(proxy="system"):
+                    self._firered_vad = None
+            else:
+                log.info("FireRedVAD: using cached model")
+
+            use_gpu = bool(torch.cuda.is_available())
+            vad_config = FireRedStreamVadConfig(
+                use_gpu=use_gpu,
+                smooth_window_size=5,
+                speech_threshold=0.4,
+                pad_start_frame=5,
+                min_speech_frame=8,
+                max_speech_frame=2000,
+                min_silence_frame=20,
+            )
+            firered_model_dir = FIRERED_CACHE_DIR / "Stream-VAD"
+            if use_gpu:
+                log.info(f"FireRedVAD: loading with CUDA support (model_dir={firered_model_dir})")
+            else:
+                log.warning(f"FireRedVAD: running on CPU (model_dir={firered_model_dir})")
+
+            self._firered_vad = FireRedStreamVad.from_pretrained(
+                model_dir=firered_model_dir, config=vad_config
+            )
+        except ModuleNotFoundError as e:
+            log.warning(f"FireRedVAD not installed ({e}); falling back to Silero")
+            self._firered_vad = None
 
         # Silero v5 ships its model inside the `silero-vad` PyPI package, so load
         # it from there (zero network). Only fall back to the torch.hub cache
@@ -96,7 +139,24 @@ class VADProcessor:
 
     def update_settings(self, settings: dict):
         if "vad_mode" in settings:
-            self.mode = settings["vad_mode"]
+            mode = str(settings["vad_mode"]).lower()
+            # --- NEW: Validate FireRedVAD requirements ---
+            if mode == "firered":
+                if self._firered_vad is None:
+                    log.error(f"FireRedVAD mode selected but not installed. Fallback to silero!")
+                    mode = "silero"  # graceful fallback
+                elif self.sample_rate != 16000:
+                    log.error(
+                        f"FireRedVAD requires 16kHz audio; current sample_rate={self.sample_rate}. Fallback to silero!"
+                    )
+                    mode = "silero"
+            if mode not in ("silero", "firered", "energy", "disabled"):
+                log.warning(f"Invalid vad_mode '{mode}'. Fallback to silero!")
+                mode = "silero"
+
+            self.mode = mode
+            log.info(f"VAD mode set to: {self.mode}")
+
         if "vad_threshold" in settings:
             self.threshold = settings["vad_threshold"]
         if "energy_threshold" in settings:
@@ -134,9 +194,25 @@ class VADProcessor:
         rms = float(np.sqrt(np.mean(audio_chunk**2)))
         return min(1.0, rms / (self.energy_threshold * 2))
 
+    def _firered_confidence(self, audio_chunk: np.ndarray) -> float:
+        """Extract confidence from FireRedVAD streaming backend."""
+        try:
+            audio_chunk = np.squeeze(audio_chunk)*self._FIRERED_INPUT_SCALER
+            frame_results = self._firered_vad.detect_chunk(audio_chunk)
+            if not frame_results: return 0.0
+            probs = []
+            for r in frame_results:
+                probs.append(float(r.smoothed_prob))
+            return float(np.clip(np.max(probs), 0.0, 1.0))
+        except Exception as e:
+            log.error(f"FireRedVAD confidence error: {e}")
+            return 0.0
+
     def _get_confidence(self, audio_chunk: np.ndarray) -> float:
         if self.mode == "silero":
             return self._silero_confidence(audio_chunk)
+        elif self.mode == "firered":
+            return self._firered_confidence(audio_chunk)
         elif self.mode == "energy":
             return self._energy_confidence(audio_chunk)
         else:  # disabled
@@ -157,7 +233,9 @@ class VADProcessor:
         confidence = self._get_confidence(audio_chunk)
         self.last_confidence = confidence
 
-        effective_threshold = self.threshold if self.mode == "silero" else 0.5
+        effective_threshold = (
+            self.threshold if self.mode in ("silero", "firered") else 0.5
+        )
         eff_silence_limit = self._get_effective_silence_limit()
 
         if confidence >= effective_threshold:
@@ -256,7 +334,7 @@ class VADProcessor:
         avg_conf = sum(smoothed[search_start:]) / max(1, n - search_start)
         dip_ratio = min_val / max(avg_conf, 1e-6)
 
-        effective_threshold = self.threshold if self.mode == "silero" else 0.5
+        effective_threshold = self.threshold if self.mode in ("silero", "firered") else 0.5
         if min_val < effective_threshold or dip_ratio < 0.8:
             log.debug(
                 f"Split point at chunk {min_idx}/{n}: "
@@ -319,10 +397,8 @@ class VADProcessor:
             return None
         # Speech density check: discard segments where most chunks are below threshold
         if len(self._confidence_history) >= 4:
-            effective_threshold = self.threshold if self.mode == "silero" else 0.5
-            voiced = sum(
-                1 for c in self._confidence_history if c >= effective_threshold
-            )
+            effective_threshold = self.threshold if self.mode in ("silero", "firered") else 0.5
+            voiced = sum(1 for c in self._confidence_history if c >= effective_threshold)
             density = voiced / len(self._confidence_history)
             if density < 0.25:
                 dur = self._speech_samples / self.sample_rate

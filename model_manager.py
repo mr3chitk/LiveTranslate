@@ -166,6 +166,9 @@ _CACHE_MODELS = [
     ("Anime-Whisper", "anime-whisper"),
 ]
 
+FIRERED_VAD_MODEL_ID = "FireRedTeam/FireRedVAD"
+FIRERED_CACHE_DIR = MODELS_DIR / "firered-vad"
+
 
 def normalize_funasr_model_key(model_key: str | None) -> str:
     if model_key in FUNASR_MODEL_PROFILES:
@@ -586,6 +589,51 @@ def _load_silero_relaxed_ssl():
     finally:
         ssl._create_default_https_context = original
 
+
+def download_fireredvad(proxy: str = "system") -> bool:
+    """Download FireRedVAD pretrained model to ./models/firered-vad/.
+
+    Returns True on success, False otherwise.
+    """
+    cache_dir = FIRERED_CACHE_DIR.resolve()
+    if not _firered_cache_invalid(cache_dir):
+        log.info("FireRedVAD model already cached")
+        return True
+
+    with _proxy_env(proxy):
+        try:
+            from huggingface_hub import snapshot_download
+            
+            log.info(f"Downloading {FIRERED_VAD_MODEL_ID}...")
+            snapshot_download(
+                repo_id=FIRERED_VAD_MODEL_ID,
+                local_dir=cache_dir,
+                ignore_patterns=["*.gguf"],  # Skip GGUF variants if present
+            )
+            log.info(f"FireRedVAD is downloaded")
+            return True
+        except Exception as e:
+            log.warning(
+                f"FireRedVAD download failed (Silero fallback active): "
+                f"{type(e).__name__}: {e}"
+            )
+            return False
+
+def _firered_cache_invalid() -> bool:
+    """Check if cached FireRedVAD model is missing or corrupted.
+
+    Returns True if cache should be re-downloaded (missing dir, empty, or no weights).
+    """
+    if not FIRERED_CACHE_DIR.exists() or not FIRERED_CACHE_DIR.is_dir():
+        return True
+    
+    # Validate if streaming model
+    if (FIRERED_CACHE_DIR/"Stream-VAD/cmvn.ark").is_file() and \
+        (FIRERED_CACHE_DIR/"Stream-VAD/model.pth.tar").is_file():
+        not_found = False
+    else:
+        not_found = True
+    return not_found # Cache looks valid, no download needed
 
 def qwen_weights_present(model_dir) -> bool:
     """Whether a nano model's embedded Qwen3-0.6B weights are in place.

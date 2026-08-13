@@ -412,8 +412,8 @@ class ControlPanel(QWidget):
         mode_group = QGroupBox(t("group_vad_mode"))
         mode_layout = QVBoxLayout(mode_group)
         self._vad_mode = QComboBox()
-        self._vad_mode.addItems([t("vad_silero"), t("vad_energy"), t("vad_disabled")])
-        mode_map = {"silero": 0, "energy": 1, "disabled": 2}
+        self._vad_mode.addItems([t("vad_silero"), t("vad_energy"), t("vad_firered"), t("vad_disabled")])
+        mode_map = {"silero": 0, "energy": 1, "firered": 2, "disabled": 3}
         self._vad_mode.setCurrentIndex(mode_map.get(s.get("vad_mode", "energy"), 1))
         self._vad_mode.currentIndexChanged.connect(self._on_vad_mode_changed)
         self._vad_mode.currentIndexChanged.connect(self._auto_save)
@@ -1353,7 +1353,7 @@ class ControlPanel(QWidget):
         self._silence_duration.setEnabled(index == 1)
 
     def _on_vad_mode_changed(self, index):
-        modes = ["silero", "energy", "disabled"]
+        modes = ["silero", "energy", "firered", "disabled"]
         self._current_settings["vad_mode"] = modes[index]
 
     def _on_threshold_changed(self, value):
