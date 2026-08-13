@@ -52,7 +52,7 @@ class VADProcessor:
             vad_config = FireRedStreamVadConfig(
                 use_gpu=use_gpu,
                 smooth_window_size=5,
-                speech_threshold=0.4,
+                speech_threshold=self.threshold,
                 pad_start_frame=5,
                 min_speech_frame=8,
                 max_speech_frame=2000,
