@@ -139,24 +139,7 @@ class VADProcessor:
 
     def update_settings(self, settings: dict):
         if "vad_mode" in settings:
-            mode = str(settings["vad_mode"]).lower()
-            # --- NEW: Validate FireRedVAD requirements ---
-            if mode == "firered":
-                if self._firered_vad is None:
-                    log.error(f"FireRedVAD mode selected but not installed. Fallback to silero!")
-                    mode = "silero"  # graceful fallback
-                elif self.sample_rate != 16000:
-                    log.error(
-                        f"FireRedVAD requires 16kHz audio; current sample_rate={self.sample_rate}. Fallback to silero!"
-                    )
-                    mode = "silero"
-            if mode not in ("silero", "firered", "energy", "disabled"):
-                log.warning(f"Invalid vad_mode '{mode}'. Fallback to silero!")
-                mode = "silero"
-
-            self.mode = mode
-            log.info(f"VAD mode set to: {self.mode}")
-
+            self.mode = settings["vad_mode"]
         if "vad_threshold" in settings:
             self.threshold = settings["vad_threshold"]
         if "energy_threshold" in settings:
