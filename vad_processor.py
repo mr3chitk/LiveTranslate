@@ -180,7 +180,11 @@ class VADProcessor:
     def _firered_confidence(self, audio_chunk: np.ndarray) -> float:
         """Extract confidence from FireRedVAD streaming backend."""
         try:
-            frame_results = self._firered_vad.detect_chunk(audio_chunk*self._FIRERED_INPUT_SCALER)
+            window_size = 400
+            chunk = audio_chunk
+            if len(chunk) < window_size:
+                chunk = np.pad(chunk, (0, window_size - len(chunk)))
+            frame_results = self._firered_vad.detect_chunk(chunk*self._FIRERED_INPUT_SCALER)
             if not frame_results: return 0.0
             probs = []
             for r in frame_results:
