@@ -1250,6 +1250,7 @@ class LiveTranslateApp:
 
     def resume(self):
         self._paused = False
+        self._audio._restart_stream() # Also reset stream to new device on resume
         log.info("Pipeline resumed")
 
     def _process_segment(self, speech_segment):
