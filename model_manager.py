@@ -728,7 +728,7 @@ def download_asr_direct(model_id, hub="hf", proxy="system"):
             snapshot_download(model_id=model_id, cache_dir=ms_cache)
         else:
             from huggingface_hub import snapshot_download
-            print(model_id)
+
             hf_cache = os.path.join(resolved, "huggingface", "hub")
             log.info(f"Downloading {model_id} from HuggingFace...")
             snapshot_download(repo_id=model_id, cache_dir=hf_cache)

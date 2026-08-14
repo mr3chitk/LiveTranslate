@@ -95,6 +95,7 @@ def _load_engine(config: dict):
             language=language,
             download_root=download_root,
             pad_seconds=pad_seconds,
+            hot_words=config.get("hot_words","")
         )
 
     if hasattr(engine, "set_language"):

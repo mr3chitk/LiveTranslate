@@ -60,7 +60,7 @@ class VADProcessor:
             )
             firered_model_dir = FIRERED_CACHE_DIR / "Stream-VAD"
             if use_gpu:
-                log.info(f"FireRedVAD: loading with CUDA support (model_dir={firered_model_dir})")
+                log.info(f"FireRedVAD: running on CUDA (model_dir={firered_model_dir})")
             else:
                 log.warning(f"FireRedVAD: running on CPU (model_dir={firered_model_dir})")
 
@@ -180,8 +180,7 @@ class VADProcessor:
     def _firered_confidence(self, audio_chunk: np.ndarray) -> float:
         """Extract confidence from FireRedVAD streaming backend."""
         try:
-            audio_chunk = np.squeeze(audio_chunk)*self._FIRERED_INPUT_SCALER
-            frame_results = self._firered_vad.detect_chunk(audio_chunk)
+            frame_results = self._firered_vad.detect_chunk(audio_chunk*self._FIRERED_INPUT_SCALER)
             if not frame_results: return 0.0
             probs = []
             for r in frame_results:

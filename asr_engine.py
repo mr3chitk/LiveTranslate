@@ -28,6 +28,7 @@ class ASREngine:
         language="auto",
         download_root=None,
         pad_seconds=None,
+        hot_words=""
     ):
         self.language = language if language != "auto" else None
         self._model = WhisperModel(
@@ -37,6 +38,7 @@ class ASREngine:
             compute_type=compute_type,
             download_root=download_root,
         )
+        self.hot_words = hot_words
         self._set_input_padding(pad_seconds, log_change=False)
         log.info(f"Model loaded: {model_size} on {device} ({compute_type})")
         self._log_input_padding()
@@ -132,7 +134,8 @@ class ASREngine:
             beam_size=5,
             vad_filter=False,
             word_timestamps=word_timestamps,
-            repetition_penalty=1.2
+            repetition_penalty=1.2,
+            hotwords=self.hot_words
         )
 
         text_parts = []

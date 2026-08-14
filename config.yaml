@@ -31,6 +31,8 @@ asr:
   sensevoice_pad_seconds: 0.5
   # faster-whisper input padding bucket in seconds (0 = disabled)
   whisper_pad_seconds: 0.5
+  # hot words (faster-whisper only)
+  hot_words: ""
 
 translation:
   # OpenAI-compatible API settings
