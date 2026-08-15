@@ -501,7 +501,7 @@ class SubtitleWindow(QWidget):
 
     _MIN_DISPLAY_MS = 2000  # minimum ms before a sentence can be replaced
     _MAX_DISPLAY_MS = 10000
-    _MAX_DISPLAY_LEN = 300  # len of translation to _max_display_ms 
+    _MAX_DISPLAY_LEN = 250  # len of translation to _max_display_ms 
 
     def __init__(self, settings=None):
         super().__init__()
@@ -848,15 +848,16 @@ class SubtitleWindow(QWidget):
             min(1,self._last_translation_len/SubtitleWindow._MAX_DISPLAY_LEN) * \
                 max(0,SubtitleWindow._MAX_DISPLAY_MS - SubtitleWindow._MIN_DISPLAY_MS)
         if remaining_ms > 0:
-            base_delay = wait_ms + remaining_ms # Force to fully wait on remaining_ms (aka elapsed = 0)
+            base_delay = int(wait_ms + remaining_ms) # Force to fully wait on remaining_ms (aka elapsed = 0)
         else:
             base_delay = max(0, int(wait_ms - elapsed)) if self._last_insert_time > 0 else 0
-        
+
         # Save new self._last_translation_len
         self._last_translation_len = 0
         for v in translations.values(): 
             self._last_translation_len = max(self._last_translation_len,len(v))
 
+        # Insert sentence directly/via QTimer
         if base_delay == 0:
             self._insert_sentence(original, translations)
         else:
