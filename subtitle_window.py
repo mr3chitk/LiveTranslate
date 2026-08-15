@@ -501,7 +501,7 @@ class SubtitleWindow(QWidget):
 
     _MIN_DISPLAY_MS = 2000  # minimum ms before a sentence can be replaced
     _MAX_DISPLAY_MS = 10000
-    _MAX_DISPLAY_LEN = 250  # len of translation to _max_display_ms 
+    _MAX_DISPLAY_LEN = 300  # len of translation to _max_display_ms 
 
     def __init__(self, settings=None):
         super().__init__()
@@ -884,13 +884,13 @@ class SubtitleWindow(QWidget):
         self._last_insert_time = time.monotonic() * 1000
 
     def _clean_inactive_timer(self):
-        """Clean inactive timer, return total remaining time"""
+        """Clean inactive timer, return max remaining time"""
         alive = []
         remain_time_ms = 0
         for timer in self._pending_segment_timers:
             if timer.isActive():
                 alive.append(timer)
-                remain_time_ms += max(0,timer.remainingTime())
+                remain_time_ms = max(remain_time_ms,timer.remainingTime())
             else:
                 timer.stop()
                 timer.deleteLater()
