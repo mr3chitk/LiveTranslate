@@ -499,6 +499,10 @@ class SubtitleWindow(QWidget):
     position_changed = pyqtSignal()
     window_closed = pyqtSignal()
 
+    _MIN_DISPLAY_MS = 2000  # minimum ms before a sentence can be replaced
+    _MAX_DISPLAY_MS = 10000
+    _MAX_DISPLAY_LEN = 300  # len of translation to _max_display_ms 
+
     def __init__(self, settings=None):
         super().__init__()
         self._settings = _merge_settings(DEFAULT_SUBTITLE_WIN_SETTINGS, settings)
@@ -521,7 +525,7 @@ class SubtitleWindow(QWidget):
         self._pending_segment_timers = []
         # Minimum display time: queue rapid updates instead of replacing instantly
         self._last_insert_time = 0.0
-        self._min_display_ms = 1500  # minimum ms before a sentence can be replaced
+        self._last_translation_len = 0
         self._height_anim = None
 
         self._setup_ui()
@@ -833,12 +837,25 @@ class SubtitleWindow(QWidget):
     @pyqtSlot(str, str)
     def _on_update_text(self, original: str, translations_json: str):
         translations = json.loads(translations_json)
-        self._cancel_pending_segments()
+        remaining_ms = self._clean_inactive_timer()
 
         # Respect minimum display time: delay if previous sentence was inserted recently
         now_ms = time.monotonic() * 1000
         elapsed = now_ms - self._last_insert_time
-        base_delay = max(0, int(self._min_display_ms - elapsed)) if self._last_insert_time > 0 else 0
+
+        # Calculate wait_ms with self._last_translation_len
+        wait_ms = SubtitleWindow._MIN_DISPLAY_MS + \
+            min(1,self._last_translation_len/SubtitleWindow._MAX_DISPLAY_LEN) * \
+                max(0,SubtitleWindow._MAX_DISPLAY_MS - SubtitleWindow._MIN_DISPLAY_MS)
+        if remaining_ms > 0:
+            base_delay = wait_ms + remaining_ms # Force to fully wait on remaining_ms (aka elapsed = 0)
+        else:
+            base_delay = max(0, int(wait_ms - elapsed)) if self._last_insert_time > 0 else 0
+        
+        # Save new self._last_translation_len
+        self._last_translation_len = 0
+        for v in translations.values(): 
+            self._last_translation_len = max(self._last_translation_len,len(v))
 
         if base_delay == 0:
             self._insert_sentence(original, translations)
@@ -865,13 +882,26 @@ class SubtitleWindow(QWidget):
         self._restart_auto_hide_timer()
         self._last_insert_time = time.monotonic() * 1000
 
+    def _clean_inactive_timer(self):
+        """Clean inactive timer, return total remaining time"""
+        alive = []
+        remain_time_ms = 0
+        for timer in self._pending_segment_timers:
+            if timer.isActive():
+                alive.append(timer)
+                remain_time_ms += max(0,timer.remainingTime())
+            else:
+                timer.stop()
+                timer.deleteLater()
+        self._pending_segment_timers = alive
+        return remain_time_ms
+
     def _cancel_pending_segments(self):
         """Cancel any pending delayed segment insertions."""
         for timer in self._pending_segment_timers:
             timer.stop()
             timer.deleteLater()
         self._pending_segment_timers.clear()
-
 
     def _refresh_display(self):
         if not self._sentences:
