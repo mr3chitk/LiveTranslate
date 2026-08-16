@@ -1294,6 +1294,12 @@ class LiveTranslateApp:
                 f"discarding: {original_text[:60]}"
             )
             return
+        # artifact filter
+        artifacts = self._config["asr"].get("artifacts","")
+        items = [x.strip() for x in artifacts.split(",")]
+        if(original_text in items):
+            log.info(f"Discard artifact: {original_text}")
+            return
 
         self._asr_count += 1
         self._msg_id += 1
@@ -1536,6 +1542,13 @@ class LiveTranslateApp:
         asr_lang_setting = self._panel.get_settings().get("asr_language", "auto") if self._panel else "auto"
         if asr_lang_setting != "auto" and source_lang != asr_lang_setting:
             log.info(f"Language filter: expected '{asr_lang_setting}' but got '{source_lang}', discarding: {original_text[:60]}")
+            return
+
+        # artifact filter
+        artifacts = self._config["asr"].get("artifacts","")
+        items = [x.strip() for x in artifacts.split(",")]
+        if(original_text in items):
+            log.info(f"Discard artifact: {original_text}")
             return
 
         self._asr_count += 1

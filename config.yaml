@@ -33,7 +33,8 @@ asr:
   whisper_pad_seconds: 0.5
   # hot words (faster-whisper only)
   hot_words: ""
-
+  # artifacts (aka skip list)
+  artifacts: ""
 translation:
   # OpenAI-compatible API settings
   api_base: "http://127.0.0.1:1234/v1"

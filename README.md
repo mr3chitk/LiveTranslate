@@ -1,9 +1,9 @@
 # WHAT ARE NEW?
 - FireredVAD
-- Length-based subtitle timing for SubtitleWindow so you can read subtitle casually (_MIN_DISPLAY_MS, _MAX_DISPLAY_MS, _MAX_DISPLAY_LEN)
-- model_custom_download.bat for fast custom model downloading. Recommended models are whisper-ja-anime-v0.3, faster-whisper-ja-760M.
-- FasterWhisper hotwords in config.yaml
-- Reset device quickly with "Run/Pause" button
+- Length-based subtitle timing for SubtitleWindow so you can read subtitles casually (_MIN_DISPLAY_MS, _MAX_DISPLAY_MS, _MAX_DISPLAY_LEN)
+- model_custom_download.bat for fast custom model downloading. Recommended models are included in the file comments.
+- Artifact filter, FasterWhisper hotwords in config.yaml
+- Reset device quickly with "Run/Stop" button
 - Better configs (no sloppy subtitle y axis, int8 by default for perf,...)
 
 # LiveTranslate
