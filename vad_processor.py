@@ -295,12 +295,15 @@ class VADProcessor:
             return -1
 
         # Smooth confidence with a sliding window (~160ms = 5 chunks at 32ms)
-        smooth_win = min(5, n // 2)
-        smoothed = []
-        for i in range(n):
-            lo = max(0, i - smooth_win // 2)
-            hi = min(n, i + smooth_win // 2 + 1)
-            smoothed.append(sum(self._confidence_history[lo:hi]) / (hi - lo))
+        if self.mode == "firered":
+            smoothed = self._confidence_history # firered is smoothed
+        else:
+            smooth_win = min(5, n // 2)
+            smoothed = []
+            for i in range(n):
+                lo = max(0, i - smooth_win // 2)
+                hi = min(n, i + smooth_win // 2 + 1)
+                smoothed.append(sum(self._confidence_history[lo:hi]) / (hi - lo))
 
         # Search in the latter 70% of the buffer (avoid splitting too early)
         search_start = max(1, n * 3 // 10)
