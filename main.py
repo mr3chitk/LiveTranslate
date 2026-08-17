@@ -265,6 +265,9 @@ class LiveTranslateApp:
         self._last_interim_check_time = 0.0
         self._interim_committed_tail = ""
 
+        # artifacts
+        self.artifacts = [x.strip() for x in self._config["asr"].get("artifacts","").split(",")]
+
     def set_overlay(self, overlay: SubtitleOverlay):
         self._overlay = overlay
 
@@ -1295,9 +1298,7 @@ class LiveTranslateApp:
             )
             return
         # artifact filter
-        artifacts = self._config["asr"].get("artifacts","")
-        items = [x.strip() for x in artifacts.split(",")]
-        if(original_text in items):
+        if(original_text in self.artifacts):
             log.info(f"Discard artifact: {original_text}")
             return
 
@@ -1545,9 +1546,7 @@ class LiveTranslateApp:
             return
 
         # artifact filter
-        artifacts = self._config["asr"].get("artifacts","")
-        items = [x.strip() for x in artifacts.split(",")]
-        if(original_text in items):
+        if(original_text in self.artifacts):
             log.info(f"Discard artifact: {original_text}")
             return
 

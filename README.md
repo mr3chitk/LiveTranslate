@@ -1,4 +1,4 @@
-# WHAT ARE NEW?
+# WHAT'S NEW?
 - FireredVAD
 - Length-based subtitle timing for SubtitleWindow so you can read subtitles casually (_MIN_DISPLAY_MS, _MAX_DISPLAY_MS, _MAX_DISPLAY_LEN)
 - model_custom_download.bat for fast custom model downloading. Recommended models are included in the file comments.
