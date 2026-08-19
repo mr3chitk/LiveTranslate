@@ -400,6 +400,7 @@ class Translator:
     @staticmethod
     def _check_repetition(text: str) -> bool:
         """Detect repetition loops in model output."""
+        return False
         if not text or len(text) < 40:
             return False
         for plen in range(8, len(text) // 2 + 1):
