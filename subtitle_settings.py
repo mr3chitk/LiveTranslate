@@ -28,6 +28,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from dialogs import available_screen_height, make_scroll_area
 from i18n import t, LANGUAGES
 from subtitle_window import DEFAULT_SUBTITLE_WIN_SETTINGS
 
@@ -642,10 +643,10 @@ class SubtitleSettingsDialog(QDialog):
         layout.setContentsMargins(0, 0, 0, 0)
         self._widget = SubtitleSettingsWidget(current_settings, self)
         self._widget.settings_changed.connect(self.settings_changed.emit)
-        layout.addWidget(self._widget)
+        layout.addWidget(make_scroll_area(self._widget))
         self.setWindowTitle(t("subwin_settings"))
-        self.setMinimumSize(520, 500)
-        self.resize(560, 640)
+        self.setMinimumSize(520, 400)
+        self.resize(560, min(640, available_screen_height(self)))
 
     def get_settings(self) -> dict:
         return self._widget.get_settings()

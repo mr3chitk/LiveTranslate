@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-17
+- Incremental ASR sentence segmentation switched from PySBD to yasbd-lib (#37): API-compatible with no behavior change, adds native rules for Korean and 16 more languages (Korean previously fell back to English rules), and is much faster on long text
+- Fixed empty translations showing up as untranslated same-language text with DeepSeek (#38): DeepSeek defaults to thinking mode ON and only accepts thinking.type=disabled to turn it off, while the previously sent enable_thinking=false is a Qwen-style flag it ignores; the model edit dialog now has a "Disable thinking" style selector (auto-detect / DeepSeek·Volcano Ark·GLM / Qwen·DashScope·SiliconFlow / self-hosted vLLM·SGLang / OpenAI·Grok reasoning_effort / do not send), auto-detect no longer sends unknown parameters to official OpenAI-style endpoints that reject them, and a diagnostic warning is logged when reasoning burns the whole token budget and returns an empty completion
+- Fixed settings windows overflowing the screen at 150%+ DPI scaling, which left the OK/Cancel buttons unreachable (#39): the model edit dialog and control panel tabs now scroll when needed, and window heights are clamped to the screen's usable area
+- Install and update no longer write download caches to the system drive: the portable build keeps the uv cache and managed Python inside the app folder, and the install/update scripts keep pip's cache and temp files inside the project folder, cleaned up after a successful install
+
 ## 2026-07-11
 - Fixed Fun-ASR-Nano first load: the Qwen3-0.6B weight download could be killed by the 180s worker startup timeout (#32); weights are now fetched up-front in the model download phase, so worker startup no longer waits on large downloads
 - Fixed model detection misses caused by the ModelScope 1.38+ cache location change (#32, #33): all cache layouts across SDK versions are recognized, so upgrading the SDK no longer re-downloads existing models

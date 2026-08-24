@@ -487,6 +487,7 @@ class LiveTranslateApp:
             proxy=model_config.get("proxy", "none"),
             no_system_role=model_config.get("no_system_role", False),
             no_think=model_config.get("no_think", True),
+            thinking_style=model_config.get("thinking_style"),
             json_response=model_config.get("json_response", False),
             timeout=timeout,
             overrides=model_config.get("overrides"),
@@ -1361,20 +1362,20 @@ class LiveTranslateApp:
 
     # ── Incremental ASR ──
 
-    _pysbd_cache = {}  # lang -> pysbd.Segmenter
+    _segmenter_cache = {}  # lang -> yasbd pysbd_adapter.Segmenter
 
     @staticmethod
     def _get_segmenter(lang: str):
-        import pysbd
-        if lang not in LiveTranslateApp._pysbd_cache:
-            pysbd_lang = lang if lang in pysbd.languages.LANGUAGE_CODES else "en"
-            LiveTranslateApp._pysbd_cache[lang] = pysbd.Segmenter(
-                language=pysbd_lang, clean=False
+        from yasbd import get_supported_langs, pysbd_adapter
+        if lang not in LiveTranslateApp._segmenter_cache:
+            seg_lang = lang if lang in get_supported_langs() else "en"
+            LiveTranslateApp._segmenter_cache[lang] = pysbd_adapter.Segmenter(
+                language=seg_lang, clean=False
             )
-        return LiveTranslateApp._pysbd_cache[lang]
+        return LiveTranslateApp._segmenter_cache[lang]
 
     def _split_sentences(self, text: str, lang: str = "en") -> list[str]:
-        """Split text into sentences using pysbd, with comma fallback for long text."""
+        """Split text into sentences using yasbd, with comma fallback for long text."""
         seg = self._get_segmenter(lang)
         parts = [p for p in seg.segment(text) if p.strip()]
         if len(parts) > 1:

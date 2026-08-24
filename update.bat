@@ -57,6 +57,11 @@ if not exist ".venv\Scripts\pip.exe" (
 :: Update dependencies
 echo.
 echo Updating dependencies...
+:: Keep pip's download cache and temp files off the system drive
+set "PIP_CACHE_DIR=%~dp0.pip-cache"
+set "TMP=%~dp0.tmp"
+set "TEMP=%~dp0.tmp"
+if not exist "%~dp0.tmp" mkdir "%~dp0.tmp"
 del /q ".venv\.livetranslate-ready" >nul 2>&1
 .venv\Scripts\pip.exe install -r requirements.txt --quiet
 if errorlevel 1 (
@@ -65,9 +70,9 @@ if errorlevel 1 (
     exit /b 1
 )
 
-.venv\Scripts\pip.exe install pysbd --quiet
+.venv\Scripts\pip.exe install "yasbd-lib>=0.15,<1.0" --quiet
 if errorlevel 1 (
-    echo [ERROR] Failed to install pysbd.
+    echo [ERROR] Failed to install yasbd-lib.
     pause
     exit /b 1
 )
@@ -80,6 +85,9 @@ if errorlevel 1 (
 )
 
 > ".venv\.livetranslate-ready" echo %DATE% %TIME%
+
+rd /s /q "%~dp0.pip-cache" >nul 2>&1
+rd /s /q "%~dp0.tmp" >nul 2>&1
 
 echo.
 echo ========================================

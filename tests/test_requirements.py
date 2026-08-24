@@ -44,10 +44,18 @@ def test_install_entrypoint_resolves_funasr_dependencies(path: str):
 def test_update_stops_when_dependency_installation_fails():
     updater = Path("update.bat").read_text(encoding="utf-8").lower()
     dependency_block = updater.split("install -r requirements.txt", 1)[1].split(
-        "install pysbd", 1
+        'install "yasbd-lib', 1
     )[0]
 
     assert "exit /b 1" in dependency_block
+
+
+@pytest.mark.parametrize("path", INSTALL_ENTRYPOINTS)
+def test_install_entrypoints_pin_yasbd_and_drop_pysbd(path: str):
+    installer = Path(path).read_text(encoding="utf-8").lower()
+
+    assert 'yasbd-lib>=0.15,<1.0' in installer
+    assert "install pysbd" not in installer
 
 
 def test_readmes_do_not_describe_the_removed_editdistance_workaround():

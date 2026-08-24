@@ -52,6 +52,14 @@ Write-Host "========================================" -ForegroundColor Magenta
 
 Enable-SystemProxy
 
+# Keep pip's download cache (several GB with CUDA torch) and temp files in
+# the project folder instead of the system drive; both are removed once the
+# install finishes.
+$env:PIP_CACHE_DIR = Join-Path $ProjectDir ".pip-cache"
+$env:TMP = Join-Path $ProjectDir ".tmp"
+$env:TEMP = $env:TMP
+New-Item -ItemType Directory -Force -Path $env:TMP | Out-Null
+
 # ── Step 1: Find Python ──
 Write-Step "Detecting Python..."
 
@@ -269,16 +277,16 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Ok "Dependencies installed"
 
-# ── Step 6: Install pysbd for incremental ASR ──
-Write-Step "Installing pysbd..."
+# ── Step 6: Install yasbd-lib for incremental ASR sentence splitting ──
+Write-Step "Installing yasbd-lib..."
 
-& $Pip install pysbd
+& $Pip install "yasbd-lib>=0.15,<1.0"
 if ($LASTEXITCODE -ne 0) {
-    Write-Err "pysbd installation failed"
+    Write-Err "yasbd-lib installation failed"
     Read-Host "Press Enter to exit"
     exit 1
 }
-Write-Ok "pysbd installed"
+Write-Ok "yasbd-lib installed"
 
 # ── Step 7: Verify environment ──
 Write-Step "Verifying installed dependencies..."
@@ -292,6 +300,8 @@ if ($LASTEXITCODE -ne 0) {
 
 Set-Content -LiteralPath $ReadyMarker -Value (Get-Date -Format o) -Encoding ascii
 Write-Ok "Environment is ready"
+
+Remove-Item -Recurse -Force $env:PIP_CACHE_DIR, $env:TMP -ErrorAction SilentlyContinue
 
 # ── Done ──
 Write-Host ""

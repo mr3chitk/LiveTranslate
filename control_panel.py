@@ -32,6 +32,8 @@ from PyQt6.QtWidgets import (
 from benchmark import run_benchmark
 from dialogs import (
     ModelEditDialog,
+    available_screen_height,
+    make_scroll_area,
 )
 from model_manager import (
     DEFAULT_FUNASR_MODEL,
@@ -94,8 +96,8 @@ class ControlPanel(QWidget):
         super().__init__()
         self._config = config
         self.setWindowTitle(t("window_control_panel"))
-        self.setMinimumSize(480, 560)
-        self.resize(520, 650)
+        self.setMinimumSize(480, 420)
+        self.resize(520, min(650, available_screen_height(self)))
 
         saved = migrate_funasr_settings(saved_settings) or _load_saved_settings()
         if saved:
@@ -165,12 +167,16 @@ class ControlPanel(QWidget):
         layout = QVBoxLayout(self)
         tabs = QTabWidget()
 
-        tabs.addTab(self._create_vad_tab(), t("tab_vad_asr"))
-        tabs.addTab(self._create_translation_tab(), t("tab_translation"))
-        tabs.addTab(self._create_style_tab(), t("tab_style"))
-        tabs.addTab(self._create_subtitle_tab(), t("tab_subtitle"))
+        tabs.addTab(make_scroll_area(self._create_vad_tab()), t("tab_vad_asr"))
+        tabs.addTab(
+            make_scroll_area(self._create_translation_tab()), t("tab_translation")
+        )
+        tabs.addTab(make_scroll_area(self._create_style_tab()), t("tab_style"))
+        tabs.addTab(make_scroll_area(self._create_subtitle_tab()), t("tab_subtitle"))
         tabs.addTab(self._create_benchmark_tab(), t("tab_benchmark"))
-        self._cache_tab_index = tabs.addTab(self._create_cache_tab(), t("tab_cache"))
+        self._cache_tab_index = tabs.addTab(
+            make_scroll_area(self._create_cache_tab()), t("tab_cache")
+        )
         tabs.addTab(self._create_changelog_tab(), t("tab_changelog"))
         tabs.currentChanged.connect(self._on_tab_changed)
 
@@ -185,7 +191,12 @@ class ControlPanel(QWidget):
         self._save_timer.timeout.connect(self._do_auto_save)
 
         # Fit initial height based on whisper group visibility
-        QTimer.singleShot(0, lambda: self.resize(self.width(), self.sizeHint().height() + 20))
+        QTimer.singleShot(0, self._fit_height)
+
+    def _fit_height(self):
+        """Resize to content height, clamped to the screen (issue #39)."""
+        h = min(self.sizeHint().height() + 20, available_screen_height(self))
+        self.resize(self.width(), max(h, self.minimumHeight()))
 
     # ── VAD / ASR Tab ──
 
@@ -1123,11 +1134,7 @@ class ControlPanel(QWidget):
         if hasattr(self, "_remote_group"):
             self._remote_group.setVisible(index == 3)
         # Resize window to fit content after whisper group visibility change
-        def _fit():
-            self.adjustSize()
-            h = self.sizeHint().height() + 20
-            self.resize(self.width(), max(h, self.minimumHeight()))
-        QTimer.singleShot(0, _fit)
+        QTimer.singleShot(0, self._fit_height)
 
     def _selected_funasr_model(self) -> str:
         value = self._funasr_model_combo.currentData()

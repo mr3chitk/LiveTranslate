@@ -5,16 +5,19 @@ import sys
 import threading
 from pathlib import Path
 
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
+    QApplication,
     QCheckBox,
     QComboBox,
     QDialog,
     QDialogButtonBox,
     QDoubleSpinBox,
     QFormLayout,
+    QFrame,
     QMessageBox,
+    QScrollArea,
     QSpinBox,
     QGroupBox,
     QHBoxLayout,
@@ -30,6 +33,43 @@ from model_manager import download_asr, download_silero
 from i18n import t, get_lang
 
 log = logging.getLogger("LiveTranslate.Dialogs")
+
+
+def available_screen_height(widget: QWidget) -> int:
+    """Usable vertical space on the widget's screen, minus a margin for
+    the title bar and taskbar. Keeps windows fully on-screen at high DPI
+    scaling (issue #39: 150% on FHD leaves only ~688 logical px)."""
+    screen = widget.screen() or QApplication.primaryScreen()
+    if screen is None:
+        return 600
+    return screen.availableGeometry().height() - 60
+
+
+class _ContentSizedScrollArea(QScrollArea):
+    """QScrollArea whose sizeHint tracks the content, bypassing the
+    built-in 36x24 font-height cap, so windows open at their natural
+    size on large screens and only scroll when the screen is small."""
+
+    def sizeHint(self) -> QSize:
+        content = self.widget()
+        if content is None:
+            return super().sizeHint()
+        frame = 2 * self.frameWidth()
+        hint = content.sizeHint() + QSize(frame, frame)
+        hint.setWidth(hint.width() + self.verticalScrollBar().sizeHint().width())
+        return hint
+
+
+def make_scroll_area(content: QWidget) -> QScrollArea:
+    """Wrap content in a borderless vertical scroll area whose sizeHint
+    tracks the content, so windows keep their natural size on large
+    screens but become scrollable instead of overflowing on small ones."""
+    area = _ContentSizedScrollArea()
+    area.setWidget(content)
+    area.setWidgetResizable(True)
+    area.setFrameShape(QFrame.Shape.NoFrame)
+    area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    return area
 
 SETTINGS_FILE = None  # set by control_panel on import
 _save_settings = None  # set by control_panel on import
@@ -442,6 +482,9 @@ class ModelEditDialog(QDialog):
         self.setMinimumWidth(500)
 
         root = QVBoxLayout(self)
+        content = QWidget()
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
 
         # --- Basic section ---
         basic_group = QGroupBox()
@@ -465,9 +508,10 @@ class ModelEditDialog(QDialog):
 
         self._no_system_role = QCheckBox(t("no_system_role"))
         self._no_system_role.setToolTip(t("no_system_role_hint"))
-        self._no_think = QCheckBox(t("no_think"))
-        self._no_think.setToolTip(t("no_think_hint"))
-        self._no_think.setChecked(True)
+        self._thinking_style = QComboBox()
+        for style_key in ("auto", "deepseek", "qwen", "vllm", "openai", "off"):
+            self._thinking_style.addItem(t(f"thinking_style_{style_key}"), style_key)
+        self._thinking_style.setToolTip(t("thinking_style_hint"))
         self._streaming = QCheckBox(t("streaming"))
         self._streaming.setToolTip(t("streaming_hint"))
         self._streaming.setChecked(True)
@@ -504,12 +548,12 @@ class ModelEditDialog(QDialog):
         layout.addRow(t("label_proxy_url"), self._proxy_url)
         layout.addRow(t("label_pricing"), price_row)
         layout.addRow(t("label_context_turns"), self._context_turns)
+        layout.addRow(t("label_thinking"), self._thinking_style)
         layout.addRow("", self._streaming)
         layout.addRow("", self._json_response)
         layout.addRow("", self._no_system_role)
-        layout.addRow("", self._no_think)
 
-        root.addWidget(basic_group)
+        content_layout.addWidget(basic_group)
 
         # --- Advanced section ---
         adv_group = QGroupBox(t("label_advanced_params"))
@@ -572,7 +616,8 @@ class ModelEditDialog(QDialog):
         self._adv_extra_body.setFixedHeight(70)
         adv_layout.addRow(t("label_extra_body"), self._adv_extra_body)
 
-        root.addWidget(adv_group)
+        content_layout.addWidget(adv_group)
+        root.addWidget(make_scroll_area(content), 1)
 
         # --- Populate from model_data ---
         if model_data:
@@ -589,7 +634,13 @@ class ModelEditDialog(QDialog):
             else:
                 self._proxy_mode.setCurrentIndex(0)
             self._no_system_role.setChecked(model_data.get("no_system_role", False))
-            self._no_think.setChecked(model_data.get("no_think", True))
+            style = model_data.get("thinking_style")
+            if style is None:
+                # Migrate the legacy no_think bool
+                style = "auto" if model_data.get("no_think", True) else "off"
+            style_idx = self._thinking_style.findData(style)
+            if style_idx >= 0:
+                self._thinking_style.setCurrentIndex(style_idx)
             self._streaming.setChecked(model_data.get("streaming", True))
             self._json_response.setChecked(model_data.get("json_response", False))
             self._context_turns.setValue(model_data.get("context_turns", 0))
@@ -619,6 +670,8 @@ class ModelEditDialog(QDialog):
         buttons.accepted.connect(self._on_accept)
         buttons.rejected.connect(self.reject)
         root.addWidget(buttons)
+        hint = self.sizeHint()
+        self.resize(hint.width(), min(hint.height(), available_screen_height(self)))
 
     def _make_override_row(self, widget):
         """Build a [checkbox + widget] row that disables the widget when unchecked."""
@@ -674,8 +727,9 @@ class ModelEditDialog(QDialog):
         }
         if self._no_system_role.isChecked():
             result["no_system_role"] = True
-        if not self._no_think.isChecked():
-            result["no_think"] = False
+        thinking_style = self._thinking_style.currentData()
+        if thinking_style != "auto":
+            result["thinking_style"] = thinking_style
         if not self._streaming.isChecked():
             result["streaming"] = False
         if self._json_response.isChecked():

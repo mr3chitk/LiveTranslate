@@ -3,6 +3,9 @@ __pycache__/
 *.pyc
 *.pyo
 .venv/
+.pip-cache/
+.uv-cache/
+.tmp/
 models/
 logs/
 docs/

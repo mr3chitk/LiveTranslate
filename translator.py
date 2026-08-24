@@ -129,11 +129,52 @@ _OVERRIDE_KEYS = (
 )
 
 
-def _uses_deepseek_thinking_control(api_base, model):
-    """Whether this endpoint/model uses DeepSeek's nested thinking toggle."""
+# Per-provider request shapes that turn thinking/reasoning off. Thinking
+# left ON silently burns the whole max_tokens budget on reasoning and the
+# completion comes back empty (issue #38), which the UI then renders as
+# untranslated same-language text.
+#   deepseek: DeepSeek API, Volcano Ark, Zhipu GLM (nested thinking object)
+#   qwen:     DashScope/Model Studio, SiliconFlow (flat enable_thinking)
+#   vllm:     self-hosted vLLM/SGLang (chat template kwarg)
+#   openai:   OpenAI GPT-5.1+/Grok 4.3+ (reasoning_effort=none)
+#   off:      send nothing (non-thinking models, LM Studio, Ollama /v1)
+THINKING_STYLES = ("auto", "deepseek", "qwen", "vllm", "openai", "off")
+
+_NESTED_THINKING_MODELS = ("deepseek", "glm")
+_NESTED_THINKING_ENDPOINTS = ("deepseek", "volces", "api.z.ai", "bigmodel")
+_PARAMLESS_ENDPOINTS = ("api.openai.com", "api.x.ai", "api.anthropic.com")
+
+
+def resolve_thinking_style(style, api_base, model) -> str:
+    """Resolve a thinking_style setting to a concrete provider style.
+
+    "auto" guesses from the endpoint/model id; official OpenAI-like
+    endpoints get "off" because they reject unknown request parameters.
+    """
+    if style in THINKING_STYLES and style != "auto":
+        return style
     endpoint = str(api_base or "").lower()
     model_id = str(model or "").lower()
-    return "deepseek" in model_id or "api.deepseek.com" in endpoint
+    if any(m in model_id for m in _NESTED_THINKING_MODELS) or any(
+        m in endpoint for m in _NESTED_THINKING_ENDPOINTS
+    ):
+        return "deepseek"
+    if any(m in endpoint for m in _PARAMLESS_ENDPOINTS):
+        return "off"
+    return "qwen"
+
+
+def thinking_disable_body(style: str) -> dict:
+    """Request-body fragment that disables thinking for a concrete style."""
+    if style == "deepseek":
+        return {"thinking": {"type": "disabled"}}
+    if style == "qwen":
+        return {"enable_thinking": False}
+    if style == "vllm":
+        return {"chat_template_kwargs": {"enable_thinking": False}}
+    if style == "openai":
+        return {"reasoning_effort": "none"}
+    return {}
 
 
 class Translator:
@@ -156,22 +197,22 @@ class Translator:
         timeout=10,
         overrides=None,
         extra_body=None,
+        thinking_style=None,
     ):
         self._client = make_openai_client(api_base, api_key, proxy, timeout=timeout)
         self._no_system_role = no_system_role
-        self._no_think = no_think
-        self._uses_deepseek_thinking = _uses_deepseek_thinking_control(
-            api_base, model
+        if thinking_style is None:
+            # Legacy configs only carry the no_think bool
+            thinking_style = "auto" if no_think else "off"
+        self._thinking_style = resolve_thinking_style(
+            thinking_style, api_base, model
         )
         self._json_response = json_response
-        if no_think:
-            thinking_param = (
-                "thinking.type=disabled"
-                if self._uses_deepseek_thinking
-                else "enable_thinking=false"
-            )
+        if self._thinking_style != "off":
             log.info(
-                f"Translator: no_think enabled for {model} via {thinking_param}"
+                f"Translator: thinking disabled for {model} via "
+                f"{self._thinking_style} style "
+                f"({thinking_disable_body(self._thinking_style)})"
             )
         if json_response:
             log.info(f"Translator: json_response enabled for {model}")
@@ -228,8 +269,7 @@ class Translator:
         t = Translator.__new__(Translator)
         t._client = self._client
         t._no_system_role = self._no_system_role
-        t._no_think = self._no_think
-        t._uses_deepseek_thinking = self._uses_deepseek_thinking
+        t._thinking_style = self._thinking_style
         t._json_response = self._json_response
         t._model = self._model
         t._target_language = target_language
@@ -296,12 +336,7 @@ class Translator:
         for k in _OVERRIDE_KEYS:
             if k in self._overrides:
                 kwargs[k] = self._overrides[k]
-        extra_body = {}
-        if self._no_think:
-            if self._uses_deepseek_thinking:
-                extra_body["thinking"] = {"type": "disabled"}
-            else:
-                extra_body["enable_thinking"] = False
+        extra_body = thinking_disable_body(self._thinking_style)
         if self._extra_body:
             extra_body.update(self._extra_body)
         if extra_body:
@@ -382,6 +417,7 @@ class Translator:
         result = "".join(chunks).strip()
         if self._json_response:
             result = self._extract_json_translation(result)
+        self._warn_if_thinking_burned(result)
         if self._check_repetition(result):
             raise RepetitionError(result)
         self._append_history(text, result)
@@ -396,6 +432,16 @@ class Translator:
         except (json.JSONDecodeError, TypeError):
             pass
         return raw
+
+    def _warn_if_thinking_burned(self, result: str):
+        """Diagnose empty completions caused by an unclosed thinking mode."""
+        if not result and self._last_completion_tokens > 0:
+            log.warning(
+                f"Empty translation but {self._last_completion_tokens} completion "
+                "tokens were used - the model likely spent the whole max_tokens "
+                "budget on reasoning; pick the correct thinking style for this "
+                f"provider in the model edit dialog (current: {self._thinking_style})"
+            )
 
     @staticmethod
     def _check_repetition(text: str) -> bool:
@@ -416,9 +462,10 @@ class Translator:
         if resp.usage:
             self._last_prompt_tokens = resp.usage.prompt_tokens or 0
             self._last_completion_tokens = resp.usage.completion_tokens or 0
-        result = resp.choices[0].message.content.strip()
+        result = (resp.choices[0].message.content or "").strip()
         if self._json_response:
             result = self._extract_json_translation(result)
+        self._warn_if_thinking_burned(result)
         return result
 
     def _translate_streaming(self, system_prompt, text):
@@ -451,4 +498,5 @@ class Translator:
         result = "".join(chunks).strip()
         if self._json_response:
             result = self._extract_json_translation(result)
+        self._warn_if_thinking_burned(result)
         return result
