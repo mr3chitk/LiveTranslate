@@ -18,7 +18,7 @@ if not exist ".venv\.livetranslate-ready" (
     exit /b 1
 )
 
-set "TRANSLATOR_PATH=C:\Users\PC\crisp-caption\scripts\start-translation-server-windows.bat"
+set "TRANSLATOR_PATH=C:\Users\PC\LLM-simple\4.translation.bat"
 if exist "%TRANSLATOR_PATH%" (
     echo [LLM] Starting Translator...
     start /min "Translator" cmd /c "%TRANSLATOR_PATH%"
