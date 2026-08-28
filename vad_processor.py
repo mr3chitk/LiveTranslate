@@ -50,10 +50,9 @@ class VADProcessor:
 
             use_gpu = bool(torch.cuda.is_available())
             # NOTE: FireredVAD only uses threshold from config.yaml, but it doesn't matter because we only get smoothed prob
-            # NOTE: Default smooth_window_size is 5, but i reduced to 3 to reduce missing first consonants, also fasten auto finalizing
             vad_config = FireRedStreamVadConfig(
                 use_gpu=use_gpu,
-                smooth_window_size=3,
+                smooth_window_size=5,
                 speech_threshold=self.threshold,
                 pad_start_frame=5,
                 min_speech_frame=8,
@@ -97,7 +96,7 @@ class VADProcessor:
         self._was_trimmed = False  # True after trim_front (interim ASR active)
 
         # Pre-speech ring buffer: capture onset consonants before VAD triggers
-        self._pre_speech_chunks = 3  # ~96ms at 32ms/chunk
+        self._pre_speech_chunks = 5  # ~96ms at 32ms/chunk
         self._pre_buffer = collections.deque(maxlen=self._pre_speech_chunks)
 
         # Silence timing
@@ -190,7 +189,7 @@ class VADProcessor:
             if not frame_results: return 0.0
             probs = []
             for r in frame_results:
-                probs.append(float(r.smoothed_prob)) # Return smoothed prob instead of raw prob because Firevad is_speaking uses smoothed prob too 
+                probs.append(float(r.smoothed_prob)) # Return smoothed prob instead of raw prob because Firevad is_speech uses smoothed prob too 
             return float(np.clip(np.max(probs), 0.0, 1.0))
         except Exception as e:
             log.error(f"FireRedVAD confidence error: {e}")

@@ -907,7 +907,7 @@ class SubtitleOverlay(QWidget):
         super().__init__()
         self._config = config
         self._messages = {}
-        self._max_messages = 50
+        self._max_messages = 500
         self._click_through = False
         self._height_before_compact = None
         self._mode_anim = None
