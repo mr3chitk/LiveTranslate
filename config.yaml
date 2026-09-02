@@ -22,34 +22,36 @@ asr:
   # Language: auto, en, ja, zh, ko, etc.
   language: "auto"
   # Minimum speech duration (seconds) before sending to ASR
-  min_speech_duration: 1.0
+  min_speech_duration: 0.2
   # Maximum speech duration (seconds) before forced segmentation
-  max_speech_duration: 8.0
+  max_speech_duration: 10.0
   # VAD threshold (0.0 - 1.0)
   vad_threshold: 0.4
   # SenseVoice input padding bucket in seconds (0 = disabled)
   sensevoice_pad_seconds: 0.5
   # faster-whisper input padding bucket in seconds (0 = disabled)
   whisper_pad_seconds: 0.5
-  # hot words (faster-whisper only)
+  # hot words (faster-whisper only, space-seperated). 
   hot_words: ""
-  # artifacts (aka skip list)
+  # init prompt (faster-whisper only, comma-seperated, may not work with fine-tuned models).
+  init_prompt: ""
+  # artifacts (aka skip list, comma-seperated)
   artifacts: ""
 translation:
   # OpenAI-compatible API settings
   api_base: "http://127.0.0.1:1234/v1"
   api_key: "sk-lm-tHzDfNGm:dgxlip7eebn3HIMxivqN"
-  model: "hunyuan-mt-chimera-7b"
+  model: "Translator"
   # Target language for translation
-  target_language: "zh"
+  target_language: "en"
   # Source language hint (auto = detect from ASR)
   source_language: "auto"
   # Context window size (number of recent translations to include)
-  context_window: 10
+  context_window: 6
   # Max tokens for translation response
   max_tokens: 256
   # Temperature
-  temperature: 0.3
+  temperature: 0.0
   # Enable streaming output
   streaming: true
   # System prompt template ({source_lang}, {target_lang}, {context} will be replaced)
@@ -84,6 +86,6 @@ subtitle:
   # Original text color
   original_color: "#CCCCCC"
   # Subtitle display duration (seconds)
-  display_duration: 5.0
+  display_duration: 20.0
   # Window opacity (0.0 - 1.0)
-  opacity: 0.95
+  opacity: 1.0

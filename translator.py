@@ -466,6 +466,7 @@ class Translator:
         if self._json_response:
             result = self._extract_json_translation(result)
         self._warn_if_thinking_burned(result)
+        result = self.post_process(result)
         return result
 
     def _translate_streaming(self, system_prompt, text):
@@ -499,4 +500,10 @@ class Translator:
         if self._json_response:
             result = self._extract_json_translation(result)
         self._warn_if_thinking_burned(result)
+        result = self.post_process(result)
+        return result
+
+    def post_process(self, text):
+        """Post process for translated text"""
+        result = text.replace("’","'")
         return result

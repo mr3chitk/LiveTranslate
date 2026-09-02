@@ -257,8 +257,8 @@ class LiveTranslateApp:
         self._last_msg_id = 0
 
         # Incremental ASR state
-        self._incremental_enabled = False
-        self._interim_interval = 2.0
+        self._incremental_enabled = True
+        self._interim_interval = 10.0
         self._interim_pending = ""
         self._interim_active = False
         self._last_interim_samples = 0
@@ -606,7 +606,8 @@ class LiveTranslateApp:
             "download_root": str((MODELS_DIR / "huggingface" / "hub").resolve()),
             "display_name": display_name,
             "remote_asr_url": remote_asr_url,
-            "hot_words": self._config["asr"].get("hot_words","")
+            "hot_words": self._config["asr"].get("hot_words",""),
+            "init_prompt": self._config["asr"].get("init_prompt","")
         }
         target_state = {
             "type": engine_type,
@@ -1299,7 +1300,7 @@ class LiveTranslateApp:
             )
             return
         # artifact filter
-        if(original_text in self.artifacts):
+        if(original_text in self.artifacts or (original_text[:-1] in self.artifacts and original_text[-1] in [".", "!", "。"])):
             log.info(f"Discard artifact: {original_text}")
             return
 
