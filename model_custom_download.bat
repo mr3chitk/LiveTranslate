@@ -1,11 +1,10 @@
 @echo off
 
 :: Quick download custom CT2 models
-:: the safest choice is non ja whisper turbo/large-v3, ja versions offer accuracy/stablity trade-off
 :: model_custom_download.bat [model_id] [hf/ms]
 :: JA FINE-TUNED MODELS
+:: model_custom_download.bat efwkjn/faster-whisper-ja-760M hf (best turbo but some artifacts)
 :: model_custom_download.bat Jim6789/whisper-ja-anime-v0.3-ct2 hf
-:: model_custom_download.bat efwkjn/faster-whisper-ja-760M hf
 :: model_custom_download.bat TransWithAI/whisper-ja-1.5B-ct2 hf
 :: GENERIC MODELS
 :: model_custom_download.bat dropbox-dash/faster-whisper-large-v3-turbo hf
