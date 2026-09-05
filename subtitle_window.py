@@ -499,9 +499,9 @@ class SubtitleWindow(QWidget):
     position_changed = pyqtSignal()
     window_closed = pyqtSignal()
 
-    _MIN_DISPLAY_MS = 2000  # minimum ms before a sentence can be replaced
+    _MIN_DISPLAY_MS = 1500  # minimum ms before a sentence can be replaced
     _MAX_DISPLAY_MS = 10000
-    _MAX_DISPLAY_LEN = 300  # len of translation to _max_display_ms 
+    _MAX_DISPLAY_LEN = 250  # len of translation to _max_display_ms 
 
     def __init__(self, settings=None):
         super().__init__()
