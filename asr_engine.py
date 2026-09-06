@@ -134,8 +134,10 @@ class ASREngine:
             beam_size=5,
             vad_filter=False,
             word_timestamps=word_timestamps,
-            repetition_penalty=1.2,
-            hotwords=self.hot_words
+            repetition_penalty=1.0,
+            no_repeat_ngram_size=5,
+            hotwords=self.hot_words,
+            temperature=0.0,
         )
 
         text_parts = []
