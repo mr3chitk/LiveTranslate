@@ -137,7 +137,7 @@ class ASREngine:
             repetition_penalty=1.0,
             no_repeat_ngram_size=5,
             hotwords=self.hot_words,
-            temperature=0.0,
+            temperature=[0.0,0.2],
         )
 
         text_parts = []

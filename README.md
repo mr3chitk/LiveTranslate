@@ -4,7 +4,7 @@
 - model_custom_download.bat for fast custom model downloading. Recommended models are included in the file comments.
 - Artifact filter, FasterWhisper hotwords in config.yaml
 - Reset device quickly with "Run/Stop" button
-- Better configs (no sloppy subtitle y axis, int8 by default for perf, no fallback temps for faster-whisper which significantly reduces hallucination in complex environments...)
+- Better configs (no sloppy subtitle y axis, int8 by default for perf, fewer fallback temps for faster-whisper which significantly reduces hallucination in complex environments...)
 
 # LiveTranslate
 
