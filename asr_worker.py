@@ -95,7 +95,7 @@ def _load_engine(config: dict):
             language=language,
             download_root=download_root,
             pad_seconds=pad_seconds,
-            hot_words=config.get("hot_words","")
+            hot_words=config.get("hot_words",""),
             init_prompt=config.get("init_prompt","")
         )
 
