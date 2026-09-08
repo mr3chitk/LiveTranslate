@@ -33,6 +33,8 @@ asr:
   whisper_pad_seconds: 0.5
   # hot words (faster-whisper only, space-seperated)
   hot_words: ""
+  # init prompt (faster-whisper only, more stable than hot_words but may not work with fine-tuned models)
+  init_prompt: ""
   # artifacts (aka skip list, comma-seperated)
   artifacts: ""
 translation:
