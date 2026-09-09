@@ -606,7 +606,8 @@ class LiveTranslateApp:
             "download_root": str((MODELS_DIR / "huggingface" / "hub").resolve()),
             "display_name": display_name,
             "remote_asr_url": remote_asr_url,
-            "hot_words": self._config["asr"].get("hot_words","")
+            "hot_words": self._config["asr"].get("hot_words",""),
+            "init_prompt": self._config["asr"].get("init_prompt","")
         }
         target_state = {
             "type": engine_type,
