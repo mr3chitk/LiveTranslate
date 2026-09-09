@@ -140,7 +140,7 @@ class ASREngine:
             no_repeat_ngram_size=5,
             hotwords=self.hot_words,
             initial_prompt=self.init_prompt,
-            temperature=[0.0,0.2],
+            temperature=[0.0],
         )
 
         text_parts = []
