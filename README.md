@@ -1,10 +1,10 @@
 # WHAT'S NEW?
-- FireredVAD (can handle noisy enviroments)
+- FireredVAD (to handle noisy enviroments)
 - Length-based subtitle timing for SubtitleWindow so you can read subtitles casually (_MIN_DISPLAY_MS, _MAX_DISPLAY_MS, _MAX_DISPLAY_LEN)
 - model_custom_download.bat for fast custom model downloading. Recommended models are included in the file comments.
-- Artifact filter, FasterWhisper hotwords in config.yaml
+- Artifact filter, FasterWhisper hotwords/initial prompt in config.yaml
 - Reset device quickly with "Run/Stop" button
-- Better configs (no sloppy subtitle y axis, int8 by default for perf, fewer fallback temps for faster-whisper which significantly reduces hallucination in complex environments...)
+- Better configs (no sloppy subtitle y axis, int8 by default for perf, fewer fallback temps which significantly reduces hallucination in complex environments...)
 
 # LiveTranslate
 

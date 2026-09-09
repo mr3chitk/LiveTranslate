@@ -344,15 +344,15 @@ class SetupWizardDialog(QDialog):
             "download_proxy": self._proxy,
             "asr_engine": "funasr",
             "funasr_model": "sensevoice-small",
-            "vad_mode": "silero",
-            "vad_threshold": 0.3,
+            "vad_mode": "firered",
+            "vad_threshold": 0.4,
             "energy_threshold": 0.02,
-            "min_speech_duration": 1.0,
-            "max_speech_duration": 8.0,
+            "min_speech_duration": 0.2,
+            "max_speech_duration": 10.0,
             "silence_mode": "auto",
             "silence_duration": 0.8,
             "asr_language": "auto",
-            "target_language": "zh",
+            "target_language": "en",
         }
         _save_settings(settings)
         QTimer.singleShot(500, self.accept)

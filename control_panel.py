@@ -105,7 +105,7 @@ class ControlPanel(QWidget):
         else:
             tc = config["translation"]
             self._current_settings = {
-                "vad_mode": "silero",
+                "vad_mode": "firered",
                 "vad_threshold": config["asr"]["vad_threshold"],
                 "energy_threshold": 0.02,
                 "min_speech_duration": config["asr"]["min_speech_duration"],

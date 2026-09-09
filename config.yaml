@@ -22,9 +22,9 @@ asr:
   # Language: auto, en, ja, zh, ko, etc.
   language: "auto"
   # Minimum speech duration (seconds) before sending to ASR
-  min_speech_duration: 1.0
+  min_speech_duration: 0.2
   # Maximum speech duration (seconds) before forced segmentation
-  max_speech_duration: 8.0
+  max_speech_duration: 10.0
   # VAD threshold (0.0 - 1.0)
   vad_threshold: 0.4
   # SenseVoice input padding bucket in seconds (0 = disabled)
@@ -34,8 +34,10 @@ asr:
   # hot words (faster-whisper only, space-seperated)
   hot_words: ""
   # init prompt (faster-whisper only, more stable than hot_words but may not work with fine-tuned models)
+  # Example: Hotwords: ホロライブ,そら,すいせい,みこ,アズキ,ロボ子,フブキ,まつり,はあと,はちゃま,アキローゼ,スバル,あやめ,ちょこセン,ころね,おかゆ,ミオ,マリン,ぺこら,ノエル,フレア,わため,カナタ,トワ,ルーナ,ぼたん,ラミィ,ポルカ,ネネ,ラプラス,こより,クロヱ,イロハ,ルイ,らでん,ハジメ,カナデ,リリカ,ヴィヴィ,ニコ,チハヤ,リオナ,レグロズ,フログロ,期生,ゲーマーズ,メンゲン,マッチュ,マガマガ,ネポラボ,マネちゃん,イナ,カリオペ,アメリア,キアラ,クロニ,ベールズ,ハコス,シオリ,ビジュー,ネリッサ,フワワ,モココ,フワモコ,エリザベス,ジジ,セシリア,ラオーラ,リス,ムーナ,イオフィ,オリー,アーニャ,レイネ,ゼータ,カエラ,こぼ.
   init_prompt: ""
   # artifacts (aka skip list, comma-seperated)
+  # Example: おはよう。,おはよう!,おはよう,おはようございます,おはようございます!,おはようございます。
   artifacts: ""
 translation:
   # OpenAI-compatible API settings
@@ -43,7 +45,7 @@ translation:
   api_key: "sk-lm-tHzDfNGm:dgxlip7eebn3HIMxivqN"
   model: "hunyuan-mt-chimera-7b"
   # Target language for translation
-  target_language: "zh"
+  target_language: "en"
   # Source language hint (auto = detect from ASR)
   source_language: "auto"
   # Context window size (number of recent translations to include)
