@@ -5,6 +5,7 @@
 - Artifact filter, FasterWhisper hotwords/initial prompt in config.yaml
 - Reset device quickly with "Run/Stop" button
 - Better configs (no sloppy subtitle y axis, int8 by default for perf, fewer fallback temps which significantly reduces hallucination in complex environments...)
+- Recommended local translator is Gemma4 e4b.
 
 # LiveTranslate
 
