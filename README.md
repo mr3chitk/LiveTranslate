@@ -5,7 +5,7 @@
 - Artifact filter, FasterWhisper hotwords/initial prompt in config.yaml
 - Reset device quickly with "Run/Stop" button
 - Better configs (no sloppy subtitle y axis, int8 by default for perf, fewer fallback temps which significantly reduces hallucination in complex environments...)
-- Recommended local translator is Gemma4 e4b.
+- Recommended local translators are any a4b/a3b MOE (that fits your system with --n-cpu-moe) > Gemma4 e4b = Agent A1. Other 4b models (neohorse1.0,ling3.0,spark2.5,minicpm5,nanbeige4.2 tested at 13-sep-26) likely have worse IF/translation.
 
 # LiveTranslate
 
