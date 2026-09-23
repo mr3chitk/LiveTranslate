@@ -136,11 +136,11 @@ class ASREngine:
             beam_size=5,
             vad_filter=False,
             word_timestamps=word_timestamps,
-            repetition_penalty=1.0,
-            no_repeat_ngram_size=5,
             hotwords=self.hot_words,
             initial_prompt=self.init_prompt,
-            temperature=[0.0],
+            without_timestamps=True,
+            temperature=0.0,
+            no_repeat_ngram_size=5,
         )
 
         text_parts = []

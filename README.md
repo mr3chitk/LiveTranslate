@@ -4,7 +4,8 @@
 - model_custom_download.bat for fast custom model downloading. Recommended models are included in the file comments.
 - Artifact filter, FasterWhisper hotwords/initial prompt in config.yaml
 - Reset device quickly with "Run/Stop" button
-- Better configs (no sloppy subtitle y axis, int8 by default for perf, fewer fallback temps which significantly reduces hallucination in complex environments...)
+- Better configs (no sloppy subtitle y axis, int8 by default, no fallback temps, without_timestamps, no_repeat_ngram_size=5...)
+  - no_repeat_ngram_size=5 is optional since accuracy gain is a 50:50. It's default because it likely pairs better with the translator.
 - Recommended local translators are any a4b/a3b MOE (that fits your system with --n-cpu-moe) > Gemma4 e4b = Agent A1. Other 4b models (neohorse1.0,ling3.0,spark2.5,minicpm5,nanbeige4.2 tested at 13-sep-26) likely have worse IF/translation.
 
 # LiveTranslate

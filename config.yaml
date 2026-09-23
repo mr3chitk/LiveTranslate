@@ -34,10 +34,11 @@ asr:
   # hot words (faster-whisper only, space-seperated)
   hot_words: ""
   # init prompt (faster-whisper only, more stable than hot_words but may not work with fine-tuned models)
-  # Example: Hotwords: ホロライブ,そら,すいせい,みこ,アズキ,ロボ子,フブキ,まつり,はあと,はちゃま,アキローゼ,スバル,あやめ,ちょこセン,ころね,おかゆ,ミオ,マリン,ぺこら,ノエル,フレア,わため,カナタ,トワ,ルーナ,ぼたん,ラミィ,ポルカ,ネネ,ラプラス,こより,クロヱ,イロハ,ルイ,らでん,ハジメ,カナデ,リリカ,ヴィヴィ,ニコ,チハヤ,リオナ,レグロズ,フログロ,期生,ゲーマーズ,メンゲン,マッチュ,マガマガ,ネポラボ,マネちゃん,イナ,カリオペ,アメリア,キアラ,クロニ,ベールズ,ハコス,シオリ,ビジュー,ネリッサ,フワワ,モココ,フワモコ,エリザベス,ジジ,セシリア,ラオーラ,リス,ムーナ,イオフィ,オリー,アーニャ,レイネ,ゼータ,カエラ,こぼ.
+  # Example: ホロライブ,ヤゴオ,そら,すいせい,みこ,アズキ,ロボ子,フブキ,まつり,はあと,はちゃま,アキローゼ,スバル,あやめ,ちょこセン,ころね,おかゆ,ミオ,マリン,ぺこら,ノエル,フレア,わため,カナタ,トワ,ルーナ,ぼたん,ラミィ,ポルカ,ネネ,ラプラス,こより,クロヱ,イロハ,ルイ,らでん,ハジメ,カナデ,リリカ,ヴィヴィ,ニコ,チハヤ,リオナ,レグロズ,フログロ,期生,ゲーマーズ,メンゲン,マッチュ,マガマガ,ネポラボ,マネちゃん,イナ,カリオペ,アメリア,キアラ,クロニ,ベールズ,ハコス,シオリ,ビジュー,ネリッサ,フワワ,モココ,フワモコ,エリザベス,ジジ,セシリア,ラオーラ,リス,ムーナ,イオフィ,オリー,アーニャ,レイネ,ゼータ,カエラ,こぼ.
+  # The best practice is only adding words that were wrongly kanji-ed by asr.
   init_prompt: ""
   # artifacts (aka skip list, comma-seperated)
-  # Example: おはよう。,おはよう!,おはよう,おはようございます,おはようございます!,おはようございます。
+  # Example: おはよう。,おはよう!,おはよう,おはようございます,おはようございます!,おはようございます。,おめでとうございます,おめでとうございます。,おめでとうございます!,ご視聴ありがとうございました,ご視聴ありがとうございました!,ご視聴ありがとうございました。
   artifacts: ""
 translation:
   # OpenAI-compatible API settings
@@ -49,7 +50,7 @@ translation:
   # Source language hint (auto = detect from ASR)
   source_language: "auto"
   # Context window size (number of recent translations to include)
-  context_window: 10
+  context_window: 4
   # Max tokens for translation response
   max_tokens: 256
   # Temperature
