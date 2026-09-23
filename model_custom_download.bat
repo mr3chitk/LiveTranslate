@@ -3,12 +3,11 @@
 :: Quick download custom CT2 models
 :: model_custom_download.bat [model_id] [hf/ms]
 :: JA FINE-TUNED MODELS
-:: model_custom_download.bat efwkjn/faster-whisper-ja-760M hf (best turbo but some artifacts)
-:: model_custom_download.bat Jim6789/whisper-ja-anime-v0.3-ct2 hf
-:: model_custom_download.bat TransWithAI/whisper-ja-1.5B-ct2 hf
+:: model_custom_download.bat efwkjn/faster-whisper-ja-760M hf       ::(best turbo, but some artifacts)
+:: model_custom_download.bat Jim6789/whisper-ja-anime-v0.3-ct2 hf   ::(old turbo, more stable, less accuracy)
+:: model_custom_download.bat TransWithAI/whisper-ja-1.5B-ct2 hf     ::(best large, but some artifacts, better than anime-whisper, need config.json update from efwkjn base model)
 :: GENERIC MODELS
 :: model_custom_download.bat dropbox-dash/faster-whisper-large-v3-turbo hf
-:: default large_v3
 
 if not exist ".venv\Scripts\python.exe" (
     echo [ERROR] Virtual environment not found.
