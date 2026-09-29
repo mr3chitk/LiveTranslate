@@ -500,7 +500,7 @@ class SubtitleWindow(QWidget):
     window_closed = pyqtSignal()
 
     HOLD_MIN_MS     = 1500  # minimum ms before a sentence can be replaced
-    HOLD_CHAR_MS    = 35    # extra ms per translated character
+    HOLD_CHAR_MS    = 30    # extra ms per translated character
 
     def __init__(self, settings=None):
         super().__init__()
