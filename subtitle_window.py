@@ -499,9 +499,8 @@ class SubtitleWindow(QWidget):
     position_changed = pyqtSignal()
     window_closed = pyqtSignal()
 
-    _MIN_DISPLAY_MS = 1500  # minimum ms before a sentence can be replaced
-    _MAX_DISPLAY_MS = 10000
-    _MAX_DISPLAY_LEN = 300  # len of translation to _max_display_ms 
+    HOLD_MIN_MS     = 1500  # minimum ms before a sentence can be replaced
+    HOLD_CHAR_MS    = 35    # extra ms per translated character
 
     def __init__(self, settings=None):
         super().__init__()
@@ -844,9 +843,7 @@ class SubtitleWindow(QWidget):
         elapsed = now_ms - self._last_insert_time
 
         # Calculate wait_ms with self._last_translation_len
-        wait_ms = SubtitleWindow._MIN_DISPLAY_MS + \
-            min(1,self._last_translation_len/SubtitleWindow._MAX_DISPLAY_LEN) * \
-                max(0,SubtitleWindow._MAX_DISPLAY_MS - SubtitleWindow._MIN_DISPLAY_MS)
+        wait_ms = SubtitleWindow.HOLD_MIN_MS + SubtitleWindow.HOLD_CHAR_MS*self._last_translation_len;
         if remaining_ms > 0:
             base_delay = int(wait_ms + remaining_ms) # Force to fully wait on remaining_ms (aka elapsed = 0)
         else:

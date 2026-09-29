@@ -1,6 +1,6 @@
 # WHAT'S NEW?
 - FireredVAD (to handle noisy enviroments)
-- Length-based subtitle timing for SubtitleWindow so you can read subtitles casually (_MIN_DISPLAY_MS, _MAX_DISPLAY_MS, _MAX_DISPLAY_LEN)
+- Length-based subtitle timing for SubtitleWindow so you can read subtitles casually (HOLD_MIN_MS,HOLD_CHAR_MS in subtitle_window.py)
 - model_custom_download.bat for fast custom model downloading. Recommended models are included in the file comments.
 - Artifact filter, FasterWhisper hotwords/initial prompt in config.yaml
 - Reset device quickly with "Run/Stop" button
