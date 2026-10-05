@@ -26,12 +26,12 @@ asr:
   # Maximum speech duration (seconds) before forced segmentation
   max_speech_duration: 10.0
   # VAD threshold (0.0 - 1.0)
-  vad_threshold: 0.4
+  vad_threshold: 0.5
   # SenseVoice input padding bucket in seconds (0 = disabled)
   sensevoice_pad_seconds: 0.5
   # faster-whisper input padding bucket in seconds (0 = disabled)
   whisper_pad_seconds: 0.5
-  # hot words (faster-whisper only, space-seperated)
+  # hot words (faster-whisper only, space-seperated). The best practice is only adding words that were wrongly kanji-ed by asr.
   hot_words: ""
   # init prompt (faster-whisper only, comma-seperated, more stable than hot_words but may not work with fine-tuned models). The best practice is only adding words that were wrongly kanji-ed by asr.
   init_prompt: ""
@@ -51,7 +51,7 @@ translation:
   # Max tokens for translation response
   max_tokens: 256
   # Temperature
-  temperature: 0.3
+  temperature: 0.0
   # Enable streaming output
   streaming: true
   # System prompt template ({source_lang}, {target_lang}, {context} will be replaced)
@@ -88,4 +88,4 @@ subtitle:
   # Subtitle display duration (seconds)
   display_duration: 5.0
   # Window opacity (0.0 - 1.0)
-  opacity: 0.95
+  opacity: 1.0
