@@ -1300,7 +1300,7 @@ class LiveTranslateApp:
             )
             return
         # artifact filter
-        if(original_text in self.artifacts):
+        if(original_text in self.artifacts or original_text[:-1] in self.artifacts):
             log.info(f"Discard artifact: {original_text}")
             return
 
