@@ -141,6 +141,9 @@ class ASREngine:
             without_timestamps=True,
             temperature=0.0,
             no_repeat_ngram_size=5,
+            log_prob_threshold=-0.5,
+            compression_ratio_threshold=2.0,
+            no_speech_threshold=0.6,
         )
 
         text_parts = []
