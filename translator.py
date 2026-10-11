@@ -260,7 +260,7 @@ class Translator:
         lines = []
         for src, tgt in self._history[-self._context_turns:]:
             lines.append(f"Source: {src}")
-            lines.append(f"Translation: {tgt}")
+            # lines.append(f"Translation: {tgt}") # NOTE: I prefer no translated texts in contexts, only work with {context} in system prompt
             lines.append("")
         return "\n".join(lines).rstrip()
 
@@ -315,7 +315,7 @@ class Translator:
             ):
                 for src, tgt in self._history[-self._context_turns:]:
                     msgs.append({"role": "user", "content": src})
-                    msgs.append({"role": "assistant", "content": tgt})
+                    msgs.append({"role": "assistant", "content": tgt}) # NOTE: this can't be removed
             msgs.append({"role": "user", "content": text})
         return msgs
 

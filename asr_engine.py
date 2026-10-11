@@ -138,12 +138,11 @@ class ASREngine:
             word_timestamps=word_timestamps,
             hotwords=self.hot_words,
             initial_prompt=self.init_prompt,
-            without_timestamps=True,
             temperature=0.0,
             no_repeat_ngram_size=5,
             log_prob_threshold=-0.5,
             compression_ratio_threshold=2.0,
-            no_speech_threshold=0.6,
+            no_speech_threshold=0.5,
         )
 
         text_parts = []
