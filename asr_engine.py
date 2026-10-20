@@ -140,10 +140,10 @@ class ASREngine:
             initial_prompt=self.init_prompt,
             temperature=0.0,
             no_repeat_ngram_size=5,
-            log_prob_threshold=-0.2,
+            log_prob_threshold=-0.5,
             compression_ratio_threshold=2.0,
-            no_speech_threshold=0.2,
-            repetition_penalty=1.1,
+            no_speech_threshold=0.5,
+            repetition_penalty=1.05,
         )
 
         text_parts = []
