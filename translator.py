@@ -260,7 +260,7 @@ class Translator:
         lines = []
         for src, tgt in self._history[-self._context_turns:]:
             lines.append(f"Source: {src}")
-            # lines.append(f"Translation: {tgt}") # NOTE: I prefer no translated texts in contexts, only work with {context} in system prompt
+            lines.append(f"Translation: {tgt}")
             lines.append("")
         return "\n".join(lines).rstrip()
 
@@ -315,7 +315,7 @@ class Translator:
             ):
                 for src, tgt in self._history[-self._context_turns:]:
                     msgs.append({"role": "user", "content": src})
-                    msgs.append({"role": "assistant", "content": tgt}) # NOTE: this can't be removed
+                    msgs.append({"role": "assistant", "content": tgt})
             msgs.append({"role": "user", "content": text})
         return msgs
 
@@ -466,6 +466,7 @@ class Translator:
         if self._json_response:
             result = self._extract_json_translation(result)
         self._warn_if_thinking_burned(result)
+        result = self.post_process(result)
         return result
 
     def _translate_streaming(self, system_prompt, text):
@@ -499,4 +500,10 @@ class Translator:
         if self._json_response:
             result = self._extract_json_translation(result)
         self._warn_if_thinking_burned(result)
+        result = self.post_process(result)
+        return result
+
+    def post_process(self, text):
+        """Post process for translated text"""
+        result = text.replace("’","'")
         return result
