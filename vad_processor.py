@@ -96,7 +96,7 @@ class VADProcessor:
         self._was_trimmed = False  # True after trim_front (interim ASR active)
 
         # Pre-speech ring buffer: capture onset consonants before VAD triggers
-        self._pre_speech_chunks = 5 + 5  # HACK: pad some frames because i saw some missing first word.
+        self._pre_speech_chunks = 5  # + 5 HACK: pad some frames because i saw some missing first word.
         self._pre_buffer = collections.deque(maxlen=self._pre_speech_chunks)
 
         # Silence timing

@@ -149,6 +149,7 @@ class ASREngine:
         text_parts = []
         words = []
         for seg in segments:
+            # print(seg)
             text_parts.append(seg.text.strip())
             if word_timestamps and seg.words:
                 for w in seg.words:
