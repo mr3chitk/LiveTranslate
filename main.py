@@ -436,6 +436,14 @@ class LiveTranslateApp:
             if language:
                 engine.set_language(language)
             return engine
+        if config.get("engine_type") == "haas":
+            from asr_haas import HaasASREngine
+
+            engine = HaasASREngine()
+            language = config.get("language")
+            if language:
+                engine.set_language(language)
+            return engine
         return self._load_asr_client(config)
 
     def _load_asr_client(self, worker_config: dict) -> ASRClient:

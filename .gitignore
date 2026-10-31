@@ -10,6 +10,7 @@ models/
 logs/
 docs/
 transcripts/
+speech.cpp/
 user_settings.json
 
 # IDE

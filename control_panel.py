@@ -218,6 +218,7 @@ class ControlPanel(QWidget):
                 f"[{t('asr_fast')}] FunASR",
                 "Anime-Whisper (ja, anime/galgame)",
                 "Remote Whisper (remote GPU server)",
+                "Haas ASR (speech.cpp, ja, GPU)",
             ]
         )
         engine_map_idx = {
@@ -225,6 +226,7 @@ class ControlPanel(QWidget):
             "funasr": 1,
             "anime-whisper": 2,
             "remote-whisper": 3,
+            "haas": 4,
         }
         engine_idx = engine_map_idx.get(s.get("asr_engine"), 0)
         self._asr_engine.setCurrentIndex(engine_idx)
@@ -419,6 +421,18 @@ class ControlPanel(QWidget):
         remote_layout.addWidget(self._remote_url_edit, 1)
         layout.addWidget(self._remote_group)
         self._remote_group.setVisible(engine_idx == 3)
+
+        # Haas ASR (speech.cpp) — download button only visible when engine is Haas
+        self._haas_group = QGroupBox("Haas ASR (speech.cpp)")
+        haas_layout = QHBoxLayout(self._haas_group)
+        self._haas_dl_btn = QPushButton(t("haas_download_btn"))
+        self._haas_dl_btn.clicked.connect(self._download_haas)
+        haas_layout.addWidget(self._haas_dl_btn)
+        self._haas_status = QLabel("")
+        self._haas_status.setStyleSheet("color: #888; font-size: 11px;")
+        haas_layout.addWidget(self._haas_status)
+        layout.addWidget(self._haas_group)
+        self._haas_group.setVisible(engine_idx == 4)
 
         mode_group = QGroupBox(t("group_vad_mode"))
         mode_layout = QVBoxLayout(mode_group)
@@ -1133,6 +1147,8 @@ class ControlPanel(QWidget):
             self._sensevoice_pad_seconds.setVisible(show_funasr_pad)
         if hasattr(self, "_remote_group"):
             self._remote_group.setVisible(index == 3)
+        if hasattr(self, "_haas_group"):
+            self._haas_group.setVisible(index == 4)
         # Resize window to fit content after whisper group visibility change
         QTimer.singleShot(0, self._fit_height)
 
@@ -1234,6 +1250,23 @@ class ControlPanel(QWidget):
             self._update_whisper_size_label()
             # Switch to Whisper engine with the downloaded size
             self._auto_save()
+
+    def _download_haas(self):
+        from asr_haas import _ensure_speech_bin, _find_exe
+
+        if _find_exe() is not None:
+            self._haas_status.setText(t("haas_downloaded"))
+            return
+
+        self._haas_dl_btn.setEnabled(False)
+        try:
+            self._haas_status.setText(t("haas_downloading"))
+            _ensure_speech_bin(Path(__file__).parent / "speech.cpp")
+            self._haas_status.setText(t("haas_downloaded"))
+        except Exception:
+            self._haas_status.setText("speech.cpp download failed")
+        finally:
+            self._haas_dl_btn.setEnabled(True)
 
     # ── Model Management ──
 
@@ -1446,6 +1479,7 @@ class ControlPanel(QWidget):
             1: "funasr",
             2: "anime-whisper",
             3: "remote-whisper",
+            4: "haas",
         }
         self._current_settings["asr_engine"] = engine_map.get(
             self._asr_engine.currentIndex(), "whisper"

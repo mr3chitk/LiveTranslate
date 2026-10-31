@@ -35,7 +35,7 @@ class ASRClient:
     def __init__(
         self,
         config: dict,
-        ready_timeout: float = 180.0,
+        ready_timeout: float = 1800.0,
         request_timeout: float = 120.0,
         shutdown_timeout: float = 5.0,
     ):
