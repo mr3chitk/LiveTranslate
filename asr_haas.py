@@ -130,6 +130,7 @@ class HaasASREngine:
         timeout=30.0,
         diarize=False,
         diarize_model="nemotron-3-diarization",
+        keywords=[],
     ):
         self._model = model
         self._url = (server_url or _DEFAULT_URL).rstrip("/") + "/v1/audio/transcriptions"
@@ -138,6 +139,7 @@ class HaasASREngine:
         # When off, the backend still works but returns only `text` (response_format=json).
         self._diarize = diarize
         self._diarize_model = diarize_model
+        self._keywords = keywords
         # trust_env=False bypasses the system / HTTP(S)_PROXY: the URL points
         # straight at a localhost backend, and routing localhost through a proxy
         # returns a non-JSON error page instead of connecting.
@@ -252,17 +254,22 @@ class HaasASREngine:
 
         # float32 [-1, 1] -> int16 PCM (OpenAI audio API expects 16kHz mono PCM).
         pcm = (np.clip(audio, -1.0, 1.0) * 32767).astype("<i2")
-        payload = {"file": ("audio.wav", _encode_pcm_wav(pcm), "audio/wav")}
+        payload = [
+            ("file", ("audio.wav", _encode_pcm_wav(pcm), "audio/wav")),
+        ]
+        payload.extend(("keywords[]", (None, keyword)) for keyword in self._keywords)
+
         if self.language and self.language != "auto":
-            payload["language"] = self.language
+            payload.append(("language", (None, self.language)))
+
         # Use diarized_json when diarization is enabled so per-speaker turns are
         # returned; fall back to plain json otherwise. `chunking_strategy` is
         # required by the backend whenever `response_format=diarized_json`.
         if self._diarize:
-            payload["response_format"] = "diarized_json"
-            payload["chunking_strategy"] = "auto"
+            payload.append(("response_format", (None, "diarized_json")))
+            payload.append(("chunking_strategy", (None, "auto")))
         else:
-            payload["response_format"] = "json"
+            payload.append(("response_format", (None, "json")))
 
         try:
             r = self._client.post(self._url, files=payload)
