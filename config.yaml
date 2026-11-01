@@ -51,7 +51,7 @@ translation:
   # Source language hint (auto = detect from ASR)
   source_language: "auto"
   # Context window size (number of recent translations to include)
-  context_window: 0
+  context_window: 4
   # Max tokens for translation response
   max_tokens: 256
   # Temperature
