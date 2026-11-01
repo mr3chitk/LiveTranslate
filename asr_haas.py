@@ -123,10 +123,21 @@ class HaasASREngine:
     interface as ASREngine for drop-in replacement.
     """
 
-    def __init__(self, model=_DEFAULT_MODEL, server_url=_DEFAULT_URL, timeout=30.0):
+    def __init__(
+        self,
+        model=_DEFAULT_MODEL,
+        server_url=_DEFAULT_URL,
+        timeout=30.0,
+        diarize=False,
+        diarize_model="nemotron-3-diarization",
+    ):
         self._model = model
         self._url = (server_url or _DEFAULT_URL).rstrip("/") + "/v1/audio/transcriptions"
         self._health_url = server_url.rstrip("/") + "/health"
+        # Enable speaker diarization via the Nemotron-3-Diarization backend model.
+        # When off, the backend still works but returns only `text` (response_format=json).
+        self._diarize = diarize
+        self._diarize_model = diarize_model
         # trust_env=False bypasses the system / HTTP(S)_PROXY: the URL points
         # straight at a localhost backend, and routing localhost through a proxy
         # returns a non-JSON error page instead of connecting.
@@ -142,16 +153,23 @@ class HaasASREngine:
         if exe is None:
             exe = _ensure_speech_bin(Path(__file__).resolve().parent / "speech.cpp")
         log.info(f"Starting speech.cpp backend: {exe}")
+        serve_args = [
+            str(exe),
+            "serve",
+            self._model,
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(_DEFAULT_PORT),
+        ]
+        # Load the diarization model so `response_format=diarized_json` returns
+        # per-speaker turns. The model is loaded lazily on first diarization request.
+        # silero-vad is needed for diarization
+        if self._diarize:
+            serve_args += ["silero-vad", self._diarize_model]
+            log.info(f"Speaker diarization enabled using {self._diarize_model}")
         self._proc = subprocess.Popen(
-            [
-                str(exe),
-                "serve",
-                self._model,
-                "--host",
-                "127.0.0.1",
-                "--port",
-                str(_DEFAULT_PORT),
-            ],
+            serve_args,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
@@ -237,7 +255,14 @@ class HaasASREngine:
         payload = {"file": ("audio.wav", _encode_pcm_wav(pcm), "audio/wav")}
         if self.language and self.language != "auto":
             payload["language"] = self.language
-        payload["response_format"] = "json"
+        # Use diarized_json when diarization is enabled so per-speaker turns are
+        # returned; fall back to plain json otherwise. `chunking_strategy` is
+        # required by the backend whenever `response_format=diarized_json`.
+        if self._diarize:
+            payload["response_format"] = "diarized_json"
+            payload["chunking_strategy"] = "auto"
+        else:
+            payload["response_format"] = "json"
 
         try:
             r = self._client.post(self._url, files=payload)
@@ -246,12 +271,44 @@ class HaasASREngine:
         except Exception as e:
             log.error(f"Haas ASR request failed: {e}")
             return None
-        # print(data)
-        text = (data.get("text") or "").strip()
-        if not text:
-            return None
 
-        detected_lang = data.get("language") or data.get("detected_language") or "ja"
+        turns = data.get("segments")
+        if turns:
+            # `segments` is a list of per-speaker turns, each with a dominant
+            # `speaker` label (A, B, ...) and its `text`. Concatenate them into a
+            # single transcript, prefixing each turn with its speaker label.
+            parts = []
+            labels = []
+            for turn in turns:
+                t = (turn.get("text") or "").strip()
+                if t:
+                    speaker = turn.get("speaker", "") or ""
+                    if speaker:
+                        parts.append(f"[{speaker}] {t}")
+                        labels.append(speaker)
+                    else:
+                        parts.append(t)
+            text = " ".join(p for p in parts if p).strip()
+            if not text:
+                return None
+            log.debug(f"Haas ASR diarized -> {labels}")
+        else:
+            text = (data.get("text") or "").strip()
+            if not text:
+                return None
+            detected_lang = (
+                data.get("language") or data.get("detected_language") or "ja"
+            )
+            log.debug(f"Haas ASR -> {text[:60]} ({detected_lang})")
+            return {
+                "text": text,
+                "language": detected_lang,
+                "language_name": detected_lang,
+            }
+
+        # When the backend returns only diarized segments without a top-level
+        # language, keep the language the client was asked to use.
+        detected_lang = self.language or "ja"
         log.debug(f"Haas ASR -> {text[:60]} ({detected_lang})")
         return {
             "text": text,

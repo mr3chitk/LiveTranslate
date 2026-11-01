@@ -37,6 +37,8 @@ asr:
   init_prompt: ""
   # artifacts (aka skip list, comma-seperated)
   artifacts: ""
+  # speech.cpp speaker diarization (haas only): disable by default because it requires silero-vad which will affect accuracy
+  haas_diarize: false
 translation:
   # OpenAI-compatible API settings
   api_base: "http://127.0.0.1:1234/v1"
@@ -47,7 +49,7 @@ translation:
   # Source language hint (auto = detect from ASR)
   source_language: "auto"
   # Context window size (number of recent translations to include)
-  context_window: 6
+  context_window: 0
   # Max tokens for translation response
   max_tokens: 256
   # Temperature

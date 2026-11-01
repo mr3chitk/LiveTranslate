@@ -15,7 +15,7 @@ class VADProcessor:
     Added FireRedVAD support. Silero remains the default for backward compatibility.
     """
 
-    _FIRERED_INPUT_SCALER = 10000  # Input scaler for FireredVAD
+    _FIRERED_INPUT_SCALER = 32767  # Input scaler for FireredVAD
 
     def __init__(
         self,
