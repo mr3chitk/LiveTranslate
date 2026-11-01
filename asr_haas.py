@@ -108,10 +108,6 @@ def _ensure_speech_bin(folder: Path) -> Path:
         else:
             raise RuntimeError(f"Unsupported archive format: {zip_path.suffix}")
 
-        # The archive yields `bin/speech.exe`; move it to the folder root.
-        bin_candidate = exe_parent / "bin" / "speech.exe"
-        src_exe = bin_candidate if bin_candidate.exists() else exe
-        shutil.move(src_exe, exe)
         log.info(f"Extracted speech.cpp to {exe}")
         return exe
     finally:
@@ -155,8 +151,6 @@ class HaasASREngine:
                 "127.0.0.1",
                 "--port",
                 str(_DEFAULT_PORT),
-                "--cors-origin",
-                "*",
             ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -252,7 +246,7 @@ class HaasASREngine:
         except Exception as e:
             log.error(f"Haas ASR request failed: {e}")
             return None
-
+        # print(data)
         text = (data.get("text") or "").strip()
         if not text:
             return None
