@@ -42,18 +42,18 @@ def _find_exe():
     return Path(found) if found else None
 
 
-def _ensure_speech_bin(folder: Path) -> Path:
+def _ensure_speech_bin(folder: Path, force_dl: bool = False) -> Path:
     """Make sure the speech.cpp `speech.exe` exists under `folder`.
 
     If missing, download the latest Windows Vulkan release from GitHub and
     extract `speech.exe` into `folder`. Returns the path to the executable.
     """
     exe = folder / "speech.exe"
-    if exe.exists():
+    if exe.exists() and not force_dl:
         return exe
 
     folder.mkdir(parents=True, exist_ok=True)
-    log.info(f"speech.cpp not found under {folder}; downloading latest release")
+    log.info(f"speech.cpp: downloading latest release into {folder}")
 
     tmp_dir = None
     try:
@@ -244,6 +244,23 @@ class HaasASREngine:
         self._proc = None
         self._client.close()
         log.info("Haas ASR backend connection closed")
+
+    def reload_speech(self):
+        """Force-redownload and restart the speech.cpp backend (update flow).
+
+        Stops the running backend so speech.exe's files are unlocked,
+        re-extracts the release into the app folder, and starts a fresh
+        backend. `unload()` closes the httpx client, but `_start_backend` /
+        `_wait_ready` reuse it, so recreate one before restarting.
+        """
+        self.unload()
+        folder = Path(__file__).resolve().parent / "speech.cpp"
+        log.info("speech.cpp: force re-download for update")
+        _ensure_speech_bin(folder, force_dl=True)
+        self._client = httpx.Client(
+            timeout=httpx.Timeout(30.0, connect=5.0), trust_env=False
+        )
+        self._start_backend()
 
     def transcribe(
         self, audio: np.ndarray, word_timestamps: bool = False, **kwargs

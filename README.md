@@ -1,6 +1,6 @@
 # WHAT'S NEW?
 - FireredVAD (to handle noisy enviroments)
-- Haas-ja-v1.0 ASR (via speech.cpp backend, which allow other modern models)
+- Haas-ja-v1.0 ASR (via speech.cpp backend, which allows other modern models)
 - Length-based subtitle timing for SubtitleWindow so you can read subtitles casually (HOLD_MIN_MS,HOLD_CHAR_MS in subtitle_window.py)
 - Artifact filter, FasterWhisper hotwords/initial prompt in config.yaml
 - Reset device quickly with "Run/Stop" button
@@ -9,7 +9,7 @@
 - model_custom_download.bat for faster CT2 model downloading 
 - Incremental ASR setting is recommended (10s)
 - Recommended model is haas-ja-v1.0
-- Recommended translator is any a4b/a3b MOE (that fits your system with --n-cpu-moe) > Gemma4 e4b. If you have low prefill, reduce context_window to 0.
+- Recommended translator is any a4b/a3b MOE (that fits your system with --n-cpu-moe) > Gemma4/Nemotron e4b. If you have low prefill, reduce context_window to 0.
 
 # LiveTranslate
 

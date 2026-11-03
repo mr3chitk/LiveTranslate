@@ -276,6 +276,7 @@ class LiveTranslateApp:
 
     def set_panel(self, panel: ControlPanel):
         self._panel = panel
+        panel._app = self
         panel.settings_changed.connect(self._on_settings_changed)
         panel.model_changed.connect(self._on_model_changed)
         panel.models_list_changed.connect(self._on_models_list_changed)

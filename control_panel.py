@@ -95,6 +95,7 @@ class ControlPanel(QWidget):
     def __init__(self, config, saved_settings=None):
         super().__init__()
         self._config = config
+        self._app = None
         self.setWindowTitle(t("window_control_panel"))
         self.setMinimumSize(480, 420)
         self.resize(520, min(650, available_screen_height(self)))
@@ -1252,16 +1253,34 @@ class ControlPanel(QWidget):
             self._auto_save()
 
     def _download_haas(self):
-        from asr_haas import _ensure_speech_bin, _find_exe
+        from asr_haas import HaasASREngine
 
-        if _find_exe() is not None:
-            self._haas_status.setText(t("haas_downloaded"))
+        # If the active ASR backend is the speech.cpp engine, drive the reload
+        # through its own object: unload() stops the running backend so speech.exe
+        # isn't locked, then _start_backend() restarts it. This avoids the
+        # "process cannot access the file" error on force-extract.
+        engine = getattr(self._app, "_asr", None) if self._app else None
+        if isinstance(engine, HaasASREngine):
+            self._haas_dl_btn.setEnabled(False)
+            try:
+                self._haas_status.setText(t("haas_downloading"))
+                engine.reload_speech()
+                self._haas_status.setText(t("haas_downloaded"))
+            except Exception as e:
+                self._haas_status.setText(
+                    f"speech.cpp re-download failed: {e}"
+                )
+            finally:
+                self._haas_dl_btn.setEnabled(True)
             return
+
+        # No running engine (or a non-haas one): just fetch the binary.
+        from asr_haas import _ensure_speech_bin
 
         self._haas_dl_btn.setEnabled(False)
         try:
             self._haas_status.setText(t("haas_downloading"))
-            _ensure_speech_bin(Path(__file__).parent / "speech.cpp")
+            _ensure_speech_bin(Path(__file__).parent / "speech.cpp", True)
             self._haas_status.setText(t("haas_downloaded"))
         except Exception:
             self._haas_status.setText("speech.cpp download failed")
