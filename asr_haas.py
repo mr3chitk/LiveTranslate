@@ -21,6 +21,7 @@ _RELEASE_API = "https://api.github.com/repos/nyosegawa/speech.cpp/releases/lates
 
 # Model served by the speech.cpp backend. `haas-ja-v1.0` is the ASR model;
 # silero-vad is passed so speech.cpp can chunk transcription by speech regions.
+# _DEFAULT_MODEL = "qwen3-asr-1.7b:q5_k"
 _DEFAULT_MODEL = "haas-ja-v1.0"
 _DEFAULT_PORT = 8766
 _DEFAULT_URL = f"http://127.0.0.1:{_DEFAULT_PORT}"
@@ -177,7 +178,7 @@ class HaasASREngine:
         )
         self._wait_ready()
 
-    def _wait_ready(self, timeout=120.0):
+    def _wait_ready(self, timeout=1800.0):
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             if self._proc.poll() is not None:
