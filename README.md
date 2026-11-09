@@ -7,7 +7,6 @@
 - Better configs (no sloppy subtitle y axis, int8 by default, no fallback temps, no_repeat_ngram_size=5...)
   - no_repeat_ngram_size=5 is optional since the accuracy gain is a 50:50. It's default because it likely pairs well with the translator.
 - model_custom_download.bat for faster CT2 model downloading 
-- Incremental ASR setting is recommended (10s)
 - Recommended model is haas-ja-v1.0
 - Recommended translator is plamo-3 > any a4b/a3b MOE > Gemma4/Nemotron e4b. If you have low prefill, reduce context_window to 0.
 

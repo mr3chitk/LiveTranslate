@@ -257,7 +257,7 @@ class LiveTranslateApp:
         self._last_msg_id = 0
 
         # Incremental ASR state
-        self._incremental_enabled = True
+        self._incremental_enabled = False
         self._interim_interval = 10.0
         self._interim_pending = ""
         self._interim_active = False
