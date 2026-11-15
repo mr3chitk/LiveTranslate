@@ -42,7 +42,7 @@ def _ensure_haas_bin(force_dl: bool = False) -> Path:
         return exe
 
     _BIN_FOLDER.mkdir(parents=True, exist_ok=True)
-    log.info(f"haas: downloading latest release into {_BIN_FOLDER}")
+    log.info(f"Haas: downloading latest release into {_BIN_FOLDER}")
 
     tmp_dir = None
     try:
@@ -148,7 +148,7 @@ class HaasASREngine:
                 str(_DEFAULT_PORT),
             ]
             if self._diarize:
-                serve_args += ["silero-vad", "nemotron-3-diarization"]
+                serve_args += ["silero-vad", str(_DEFAULT_DIARIZE)]
                 log.info(f"Speaker diarization: {_DEFAULT_DIARIZE}.")
         elif _BIN_EXE == "crispasr.exe":
             serve_args = [
@@ -247,7 +247,7 @@ class HaasASREngine:
         """Force-redownload and restart the backend (update flow).
         """
         self.unload()
-        log.info("haas: force re-download binaries for update")
+        log.info("Haas: force re-download binaries for update")
         _ensure_haas_bin(force_dl=True)
         self._client = httpx.Client(
             timeout=httpx.Timeout(30.0, connect=5.0), trust_env=False
