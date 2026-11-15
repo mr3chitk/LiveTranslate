@@ -442,7 +442,6 @@ class LiveTranslateApp:
 
             engine = HaasASREngine(
                 diarize=bool(config.get("haas_diarize", False)),
-                keywords=config.get("haas_keywords") or [],
             )
             language = config.get("language")
             if language:
@@ -621,7 +620,6 @@ class LiveTranslateApp:
             "hot_words": self._config["asr"].get("hot_words",""),
             "init_prompt": self._config["asr"].get("init_prompt",""),
             "haas_diarize": self._config["asr"].get("haas_diarize", False),
-            "haas_keywords": self._config["asr"].get("haas_keywords",[]),
         }
         target_state = {
             "type": engine_type,

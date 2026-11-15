@@ -3,58 +3,46 @@ import json
 import logging
 import shutil
 import subprocess
-import tarfile
 import tempfile
 import time
 import wave
 import zipfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import httpx
 import numpy as np
 
 log = logging.getLogger("LiveTranslate.ASR.Haas")
 
-# speech.cpp release asset (GPU build). CPU-only builds are not downloaded here.
-_RELEASE_ASSET = "-windows-x64-vulkan.zip"
-_RELEASE_API = "https://api.github.com/repos/nyosegawa/speech.cpp/releases/latest"
+use_crispasr = True # CONFIG
+if(use_crispasr):
+    _BIN_FOLDER         = Path(__file__).resolve().parent / "crispasr"
+    _BIN_EXE            = "crispasr.exe"
+    _BIN_GITHUB_API     = "https://api.github.com/repos/CrispStrobe/CrispASR/releases/latest"
+    _BIN_GITHUB_PATTERN = "crispasr-windows-x86_64-vulkan.zip"
+    _DEFAULT_MODEL      = "haas"
+    _DEFAULT_DIARIZE    = "pyannote" # foxnose / pyannote 
+else:
+    _BIN_FOLDER         = Path(__file__).resolve().parent / "speech.cpp"
+    _BIN_EXE            = "speech.exe"
+    _BIN_GITHUB_API     = "https://api.github.com/repos/nyosegawa/speech.cpp/releases/latest"
+    _BIN_GITHUB_PATTERN = "-windows-x64-vulkan.zip"
+    _DEFAULT_MODEL      = "haas-ja-v1.0"
+    _DEFAULT_DIARIZE    = "nemotron-3-diarization"
 
-# Model served by the speech.cpp backend. `haas-ja-v1.0` is the ASR model;
-# silero-vad is passed so speech.cpp can chunk transcription by speech regions.
-# _DEFAULT_MODEL = "qwen3-asr-1.7b:q5_k"
-_DEFAULT_MODEL = "haas-ja-v1.0"
 _DEFAULT_PORT = 8766
 _DEFAULT_URL = f"http://127.0.0.1:{_DEFAULT_PORT}"
 
 
-def _find_exe():
-    """Look for an existing `speech.exe` in the app's speech.cpp folder, the
-    app folder, project root, or on PATH."""
-    here = Path(__file__).resolve().parent
-    candidates = [
-        here / "speech.cpp" / "speech.exe",
-        here / "speech.exe",
-        Path.cwd() / "speech.cpp" / "speech.exe",
-    ]
-    for c in candidates:
-        if c.exists():
-            return c
-    found = shutil.which("speech.exe")
-    return Path(found) if found else None
-
-
-def _ensure_speech_bin(folder: Path, force_dl: bool = False) -> Path:
-    """Make sure the speech.cpp `speech.exe` exists under `folder`.
-
-    If missing, download the latest Windows Vulkan release from GitHub and
-    extract `speech.exe` into `folder`. Returns the path to the executable.
+def _ensure_haas_bin(force_dl: bool = False) -> Path:
+    """Make sure the selected backend binaries exist.
     """
-    exe = folder / "speech.exe"
+    exe = _BIN_FOLDER / _BIN_EXE
     if exe.exists() and not force_dl:
         return exe
 
-    folder.mkdir(parents=True, exist_ok=True)
-    log.info(f"speech.cpp: downloading latest release into {folder}")
+    _BIN_FOLDER.mkdir(parents=True, exist_ok=True)
+    log.info(f"haas: downloading latest release into {_BIN_FOLDER}")
 
     tmp_dir = None
     try:
@@ -63,23 +51,23 @@ def _ensure_speech_bin(folder: Path, force_dl: bool = False) -> Path:
         apply_cache_env()
         import urllib.request
 
-        tmp_dir = tempfile.mkdtemp(prefix="speech-cpp-dl-")
+        tmp_dir = tempfile.mkdtemp(prefix="haas-bin-dl-")
         zip_path = Path(tmp_dir) / "release.zip"
 
         # Fetch the release asset URL (skips the JSON body).
         req = urllib.request.Request(
-            _RELEASE_API, headers={"Accept": "application/vnd.github+json"}
+            _BIN_GITHUB_API, headers={"Accept": "application/vnd.github+json"}
         )
         download_url = None
         with urllib.request.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             for asset in data.get("assets", []):
-                if _RELEASE_ASSET in asset["browser_download_url"]:
+                if _BIN_GITHUB_PATTERN in asset["browser_download_url"]:
                     download_url = asset["browser_download_url"]
                     break
         if not download_url:
             raise FileNotFoundError(
-                f"Release asset '{_RELEASE_ASSET}' not found in latest release"
+                f"Release asset '{_BIN_GITHUB_PATTERN}' not found in latest release"
             )
 
         with urllib.request.urlopen(download_url, timeout=600) as src, open(
@@ -90,26 +78,37 @@ def _ensure_speech_bin(folder: Path, force_dl: bool = False) -> Path:
         exe_parent = exe.parent
         if zipfile.is_zipfile(zip_path):
             with zipfile.ZipFile(zip_path) as zf:
-                members = zf.namelist()
-                if not any(m.lower().endswith("speech.exe") for m in members):
-                    raise RuntimeError(
-                        "speech.cpp archive does not contain speech.exe"
-                    )
-                # Extract the whole archive: the backend needs models/DLLs/config
-                # alongside speech.exe, not just the executable itself.
-                zf.extractall(exe_parent)
-        elif zip_path.suffix == ".tar.gz":
-            with tarfile.open(zip_path) as tf:
-                names = tf.getnames()
-                if not any(m.lower().endswith("speech.exe") for m in names):
-                    raise RuntimeError(
-                        "speech.cpp archive does not contain speech.exe"
-                    )
-                tf.extractall(exe_parent)
+                names = zf.namelist()
+                exe_name = next(
+                    (name for name in names if PurePosixPath(name).name.lower() == _BIN_EXE),
+                    None,
+                )
+                if exe_name is None:
+                    raise FileNotFoundError(f"{_BIN_EXE} was not found in the ZIP file")
+                folder = PurePosixPath(exe_name).parent
+                for name in names:
+                    member = PurePosixPath(name)
+                    # Select files and subfolders inside that folder, excluding the folder itself.
+                    if member == folder or folder not in member.parents:
+                        continue
+                    # Keep only the path relative to the folder containing xyz.exe.
+                    relative = member.relative_to(folder)
+                    if not relative.parts:
+                        continue
+                    # Prevent paths in the ZIP from escaping the destination directory.
+                    target = (exe_parent / Path(*relative.parts)).resolve()
+                    if not target.is_relative_to(exe_parent.resolve()):
+                        raise ValueError(f"Unsafe path in ZIP: {name}")
+                    if name.endswith("/"):
+                        target.mkdir(parents=True, exist_ok=True)
+                    else:
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        with zf.open(name) as source, target.open("wb") as output:
+                            output.write(source.read())
         else:
             raise RuntimeError(f"Unsupported archive format: {zip_path.suffix}")
 
-        log.info(f"Extracted speech.cpp to {exe}")
+        log.info(f"Extracted to {exe}")
         return exe
     finally:
         if tmp_dir is not None:
@@ -117,30 +116,14 @@ def _ensure_speech_bin(folder: Path, force_dl: bool = False) -> Path:
 
 
 class HaasASREngine:
-    """Speech-to-text via the speech.cpp `speech serve` backend.
-
-    The backend is launched (once) as a subprocess and audio is sent to it over
-    HTTP using OpenAI's `/v1/audio/transcriptions` API. Implements the same
-    interface as ASREngine for drop-in replacement.
-    """
-
     def __init__(
         self,
-        model=_DEFAULT_MODEL,
-        server_url=_DEFAULT_URL,
         timeout=30.0,
         diarize=False,
-        diarize_model="nemotron-3-diarization",
-        keywords=[],
     ):
-        self._model = model
-        self._url = (server_url or _DEFAULT_URL).rstrip("/") + "/v1/audio/transcriptions"
-        self._health_url = server_url.rstrip("/") + "/health"
-        # Enable speaker diarization via the Nemotron-3-Diarization backend model.
-        # When off, the backend still works but returns only `text` (response_format=json).
+        self._url = _DEFAULT_URL.rstrip("/") + "/v1/audio/transcriptions"
+        self._health_url = _DEFAULT_URL.rstrip("/") + "/health"
         self._diarize = diarize
-        self._diarize_model = diarize_model
-        self._keywords = keywords
         # trust_env=False bypasses the system / HTTP(S)_PROXY: the URL points
         # straight at a localhost backend, and routing localhost through a proxy
         # returns a non-JSON error page instead of connecting.
@@ -152,25 +135,39 @@ class HaasASREngine:
         self._start_backend()
 
     def _start_backend(self):
-        exe = _find_exe()
-        if exe is None:
-            exe = _ensure_speech_bin(Path(__file__).resolve().parent / "speech.cpp")
-        log.info(f"Starting speech.cpp backend: {exe}")
-        serve_args = [
-            str(exe),
-            "serve",
-            self._model,
-            "--host",
-            "127.0.0.1",
-            "--port",
-            str(_DEFAULT_PORT),
-        ]
-        # Load the diarization model so `response_format=diarized_json` returns
-        # per-speaker turns. The model is loaded lazily on first diarization request.
-        # silero-vad is needed for diarization
-        if self._diarize:
-            serve_args += ["silero-vad", self._diarize_model]
-            log.info(f"Speaker diarization enabled using {self._diarize_model}")
+        exe = _ensure_haas_bin()
+        log.info(f"Starting backend: {exe}")
+        if _BIN_EXE == "speech.exe":
+            serve_args = [
+                str(exe),
+                "serve",
+                str(_DEFAULT_MODEL),
+                "--host",
+                "127.0.0.1",
+                "--port",
+                str(_DEFAULT_PORT),
+            ]
+            if self._diarize:
+                serve_args += ["silero-vad", "nemotron-3-diarization"]
+                log.info(f"Speaker diarization: {_DEFAULT_DIARIZE}.")
+        elif _BIN_EXE == "crispasr.exe":
+            serve_args = [
+                str(exe),
+                "--server",
+                "--backend",
+                str(_DEFAULT_MODEL),
+                "-m",
+                "auto",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                str(_DEFAULT_PORT),
+            ]
+            if self._diarize:
+                serve_args += ["--diarize", "--diarize-method", str(_DEFAULT_DIARIZE), "--diarize-embedder", "auto"]
+                log.info(f"Speaker diarization: {_DEFAULT_DIARIZE}.")
+        else:
+            raise RuntimeError(f"Unsupported _BIN_EXE: {_BIN_EXE}")
         self._proc = subprocess.Popen(
             serve_args,
             stdout=subprocess.DEVNULL,
@@ -183,18 +180,18 @@ class HaasASREngine:
         while time.monotonic() < deadline:
             if self._proc.poll() is not None:
                 raise ConnectionError(
-                    "speech.cpp backend exited during startup "
+                    "Haas backend exited during startup "
                     f"(code={self._proc.returncode})"
                 )
             try:
                 r = self._client.get(self._health_url, timeout=2.0)
                 if r.status_code == 200:
-                    log.info("speech.cpp backend is ready")
+                    log.info("Haas backend is ready")
                     return
             except Exception:
                 time.sleep(1.0)
         raise ConnectionError(
-            f"speech.cpp backend did not become ready at {self._health_url} within "
+            f"Haas backend did not become ready at {self._health_url} within "
             f"{timeout:g}s"
         )
 
@@ -234,7 +231,7 @@ class HaasASREngine:
     def unload(self):
         if self._proc is not None and self._proc.poll() is None:
             try:
-                log.info("Stopping speech.cpp backend")
+                log.info("Stopping haas backend")
                 self._proc.terminate()
                 self._proc.wait(timeout=5)
             except Exception:
@@ -244,20 +241,14 @@ class HaasASREngine:
                     pass
         self._proc = None
         self._client.close()
-        log.info("Haas ASR backend connection closed")
+        log.info("Haas backend connection closed")
 
     def reload_speech(self):
-        """Force-redownload and restart the speech.cpp backend (update flow).
-
-        Stops the running backend so speech.exe's files are unlocked,
-        re-extracts the release into the app folder, and starts a fresh
-        backend. `unload()` closes the httpx client, but `_start_backend` /
-        `_wait_ready` reuse it, so recreate one before restarting.
+        """Force-redownload and restart the backend (update flow).
         """
         self.unload()
-        folder = Path(__file__).resolve().parent / "speech.cpp"
-        log.info("speech.cpp: force re-download for update")
-        _ensure_speech_bin(folder, force_dl=True)
+        log.info("haas: force re-download binaries for update")
+        _ensure_haas_bin(force_dl=True)
         self._client = httpx.Client(
             timeout=httpx.Timeout(30.0, connect=5.0), trust_env=False
         )
@@ -266,28 +257,33 @@ class HaasASREngine:
     def transcribe(
         self, audio: np.ndarray, word_timestamps: bool = False, **kwargs
     ) -> dict | None:
-        """Send audio to the speech.cpp backend and return transcription."""
+        """Send audio to the backend and return transcription."""
         if audio.dtype != np.float32:
             audio = audio.astype(np.float32)
 
         # float32 [-1, 1] -> int16 PCM (OpenAI audio API expects 16kHz mono PCM).
         pcm = (np.clip(audio, -1.0, 1.0) * 32767).astype("<i2")
-        payload = [
-            ("file", ("audio.wav", _encode_pcm_wav(pcm), "audio/wav")),
-        ]
-        payload.extend(("keywords[]", (None, keyword)) for keyword in self._keywords)
+        payload = {"file": ("audio.wav", _encode_pcm_wav(pcm), "audio/wav")}
 
         if self.language and self.language != "auto":
-            payload.append(("language", (None, self.language)))
+            payload["language"] = self.language
 
         # Use diarized_json when diarization is enabled so per-speaker turns are
         # returned; fall back to plain json otherwise. `chunking_strategy` is
         # required by the backend whenever `response_format=diarized_json`.
         if self._diarize:
-            payload.append(("response_format", (None, "diarized_json")))
-            payload.append(("chunking_strategy", (None, "auto")))
+            if _BIN_EXE == "speech.exe":
+                payload["response_format"] = "diarized_json"
+                payload["chunking_strategy"] = "auto"
+            elif _BIN_EXE == "crispasr.exe":
+                payload["response_format"] = "diarized_json"
+                payload["diarize"] = "true"
+                payload["diarize_method"] = str(_DEFAULT_DIARIZE)
+                payload["diarize-embedder"] = "auto"
+            else:
+                raise RuntimeError(f"Unsupported _BIN_EXE: {_BIN_EXE}")
         else:
-            payload.append(("response_format", (None, "json")))
+            payload["response_format"] = "json"
 
         try:
             r = self._client.post(self._url, files=payload)
@@ -298,6 +294,7 @@ class HaasASREngine:
             return None
 
         turns = data.get("segments")
+        # print(data)
         if turns:
             # `segments` is a list of per-speaker turns, each with a dominant
             # `speaker` label (A, B, ...) and its `text`. Concatenate them into a

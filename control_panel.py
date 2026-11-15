@@ -219,7 +219,7 @@ class ControlPanel(QWidget):
                 f"[{t('asr_fast')}] FunASR",
                 "Anime-Whisper (ja, anime/galgame)",
                 "Remote Whisper (remote GPU server)",
-                "Haas ASR (speech.cpp, ja, GPU)",
+                "Haas ASR (ja, GPU)",
             ]
         )
         engine_map_idx = {
@@ -423,8 +423,8 @@ class ControlPanel(QWidget):
         layout.addWidget(self._remote_group)
         self._remote_group.setVisible(engine_idx == 3)
 
-        # Haas ASR (speech.cpp) — download button only visible when engine is Haas
-        self._haas_group = QGroupBox("Haas ASR (speech.cpp)")
+        # Haas ASR — download button only visible when engine is Haas
+        self._haas_group = QGroupBox("Haas ASR")
         haas_layout = QHBoxLayout(self._haas_group)
         self._haas_dl_btn = QPushButton(t("haas_download_btn"))
         self._haas_dl_btn.clicked.connect(self._download_haas)
@@ -1255,10 +1255,6 @@ class ControlPanel(QWidget):
     def _download_haas(self):
         from asr_haas import HaasASREngine
 
-        # If the active ASR backend is the speech.cpp engine, drive the reload
-        # through its own object: unload() stops the running backend so speech.exe
-        # isn't locked, then _start_backend() restarts it. This avoids the
-        # "process cannot access the file" error on force-extract.
         engine = getattr(self._app, "_asr", None) if self._app else None
         if isinstance(engine, HaasASREngine):
             self._haas_dl_btn.setEnabled(False)
@@ -1268,22 +1264,22 @@ class ControlPanel(QWidget):
                 self._haas_status.setText(t("haas_downloaded"))
             except Exception as e:
                 self._haas_status.setText(
-                    f"speech.cpp re-download failed: {e}"
+                    f"Haas re-download failed: {e}"
                 )
             finally:
                 self._haas_dl_btn.setEnabled(True)
             return
 
         # No running engine (or a non-haas one): just fetch the binary.
-        from asr_haas import _ensure_speech_bin
+        from asr_haas import _ensure_haas_bin
 
         self._haas_dl_btn.setEnabled(False)
         try:
             self._haas_status.setText(t("haas_downloading"))
-            _ensure_speech_bin(Path(__file__).parent / "speech.cpp", True)
+            _ensure_haas_bin(True)
             self._haas_status.setText(t("haas_downloaded"))
         except Exception:
-            self._haas_status.setText("speech.cpp download failed")
+            self._haas_status.setText("Haas download failed")
         finally:
             self._haas_dl_btn.setEnabled(True)
 

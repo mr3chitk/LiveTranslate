@@ -11,6 +11,7 @@ logs/
 docs/
 transcripts/
 speech.cpp/
+crispasr/
 user_settings.json
 
 # IDE

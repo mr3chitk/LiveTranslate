@@ -37,10 +37,8 @@ asr:
   init_prompt: ""
   # artifacts (aka skip list, comma-seperated)
   artifacts: ""
-  # speech.cpp speaker diarization (haas only): disable by default because it requires silero-vad which will affect accuracy
-  haas_diarize: false
-  # speech.cpp custom keywords (haas only), one "name=reading" per line (Example: - "Hololive=ホロライブ")
-  haas_keywords:
+  # haas speaker diarization: NOTE: speech.cpp backend requires a silero-vad pass which will affect accuracy, use crispasr backend
+  haas_diarize: true
 translation:
   # OpenAI-compatible API settings
   api_base: "http://127.0.0.1:1234/v1"

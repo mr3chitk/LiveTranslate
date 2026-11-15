@@ -1,6 +1,7 @@
 # WHAT'S NEW?
 - FireredVAD (to handle noisy enviroments)
-- Haas-ja-v1.0 ASR (via speech.cpp backend, which allows other modern models)
+- Haas-ja-v1.0 ASR via speech.cpp (fast)/crispasr (better diarization) backends, which also allow other modern models
+  - Configs are in asr_haas.py
 - Length-based subtitle timing for SubtitleWindow so you can read subtitles casually (HOLD_MIN_MS,HOLD_CHAR_MS in subtitle_window.py)
 - Artifact filter, FasterWhisper hotwords/initial prompt in config.yaml
 - Reset device quickly with "Run/Stop" button
