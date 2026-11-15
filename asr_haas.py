@@ -164,7 +164,10 @@ class HaasASREngine:
                 str(_DEFAULT_PORT),
             ]
             if self._diarize:
-                serve_args += ["--diarize", "--diarize-method", str(_DEFAULT_DIARIZE), "--diarize-embedder", "auto"]
+                serve_args += ["--diarize",
+                               "--diarize-method", str(_DEFAULT_DIARIZE),
+                               "--diarize-embedder", "auto",
+                               "--sherpa-segment-model", "auto"]
                 log.info(f"Speaker diarization: {_DEFAULT_DIARIZE}.")
         else:
             raise RuntimeError(f"Unsupported _BIN_EXE: {_BIN_EXE}")
@@ -279,7 +282,7 @@ class HaasASREngine:
                 payload["response_format"] = "diarized_json"
                 payload["diarize"] = "true"
                 payload["diarize_method"] = str(_DEFAULT_DIARIZE)
-                payload["diarize-embedder"] = "auto"
+                payload["diarize_embedder"] = "auto"
             else:
                 raise RuntimeError(f"Unsupported _BIN_EXE: {_BIN_EXE}")
         else:
