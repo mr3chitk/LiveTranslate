@@ -15,7 +15,7 @@ class VADProcessor:
     Added FireRedVAD support. Silero remains the default for backward compatibility.
     """
 
-    _FIRERED_INPUT_SCALER = 32767 # Input scaler for FireredVAD
+    _FIRERED_INPUT_SCALER = 32767 / 3 # DEFAULT: 32767 # HACK: smaller custom rescaling + lower threshold, yields better results on my device
 
     def __init__(
         self,
@@ -185,7 +185,8 @@ class VADProcessor:
             chunk = audio_chunk
             if len(chunk) < window_size:
                 chunk = np.pad(chunk, (0, window_size - len(chunk)))
-            frame_results = self._firered_vad.detect_chunk(chunk*self._FIRERED_INPUT_SCALER)
+            pcm = (np.clip(chunk, -1.0, 1.0).astype(np.float32) * self._FIRERED_INPUT_SCALER).astype(np.int16)
+            frame_results = self._firered_vad.detect_chunk(pcm)
             if not frame_results: return 0.0
             probs = []
             for r in frame_results:

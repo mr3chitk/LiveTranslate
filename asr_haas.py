@@ -14,7 +14,7 @@ import numpy as np
 
 log = logging.getLogger("LiveTranslate.ASR.Haas")
 
-use_crispasr = True # CONFIG
+use_crispasr = False # CONFIG
 if(use_crispasr):
     _BIN_FOLDER         = Path(__file__).resolve().parent / "crispasr"
     _BIN_EXE            = "crispasr.exe"
