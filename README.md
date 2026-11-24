@@ -1,15 +1,14 @@
 # WHAT'S NEW?
 - FireredVAD (to handle noisy enviroments)
-  - Note: Current FireredVAD use a custom scaler (VADProcessor._FIRERED_INPUT_SCALER), which works better on my machine.
-- Haas-ja-v1.0 ASR via speech.cpp (fast)/crispasr (better diarization) backends, which also allow other modern models
-  - Configs are in asr_haas.py
+  - Note: Current FireredVAD uses a custom scaler (VADProcessor._FIRERED_INPUT_SCALER), which works better on my machine.
+- Haas-ja-v1.0 ASR via speech.cpp/crispasr backends, which also allow other modern models
 - Length-based subtitle timing for SubtitleWindow so you can read subtitles casually (HOLD_MIN_MS,HOLD_CHAR_MS in subtitle_window.py)
 - Artifact filter, FasterWhisper hotwords/initial prompt in config.yaml
 - Reset device quickly with "Run/Stop" button
 - Better configs (no sloppy subtitle y axis, int8 by default, no fallback temps, no_repeat_ngram_size=5...)
   - no_repeat_ngram_size=5 is optional since the accuracy gain is a 50:50. It's default because it likely pairs well with the translator.
 - model_custom_download.bat for faster CT2 model downloading 
-- Recommended model is haas-ja-v1.0
+- Recommended models are haas-ja-v1.0 (no english/speed), crispasr qwen3-ja-anime (mixed english, quality). Configs are in asr_haas.py.
 - Recommended translator is plamo-3 > any a4b/a3b MOE > Gemma4/Nemotron e4b. If you have low prefill, reduce context_window to 0.
 
 # LiveTranslate

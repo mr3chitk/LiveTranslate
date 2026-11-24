@@ -14,20 +14,21 @@ import numpy as np
 
 log = logging.getLogger("LiveTranslate.ASR.Haas")
 
-use_crispasr = False # CONFIG
+use_crispasr = True # True / False
 if(use_crispasr):
     _BIN_FOLDER         = Path(__file__).resolve().parent / "crispasr"
     _BIN_EXE            = "crispasr.exe"
     _BIN_GITHUB_API     = "https://api.github.com/repos/CrispStrobe/CrispASR/releases/latest"
     _BIN_GITHUB_PATTERN = "crispasr-windows-x86_64-vulkan.zip"
-    _DEFAULT_MODEL      = "haas"
-    _DEFAULT_DIARIZE    = "pyannote" # foxnose / pyannote 
+    _DEFAULT_BACKEND    = "haas" # haas / qwen3 / ...
+    _DEFAULT_MODEL      = "auto" # auto / qwen3-ja-anime / ...
+    _DEFAULT_DIARIZE    = "pyannote" # foxnose / pyannote / sortformer / ...
 else:
     _BIN_FOLDER         = Path(__file__).resolve().parent / "speech.cpp"
     _BIN_EXE            = "speech.exe"
     _BIN_GITHUB_API     = "https://api.github.com/repos/nyosegawa/speech.cpp/releases/latest"
     _BIN_GITHUB_PATTERN = "-windows-x64-vulkan.zip"
-    _DEFAULT_MODEL      = "haas-ja-v1.0"
+    _DEFAULT_MODEL      = "haas-ja-v1.0" # haas-ja-v1.0 / qwen3-asr-1.7b:q4_k / ...
     _DEFAULT_DIARIZE    = "nemotron-3-diarization"
 
 _DEFAULT_PORT = 8766
@@ -118,7 +119,7 @@ def _ensure_haas_bin(force_dl: bool = False) -> Path:
 class HaasASREngine:
     def __init__(
         self,
-        timeout=30.0,
+        timeout=15.0,
         diarize=False,
     ):
         self._url = _DEFAULT_URL.rstrip("/") + "/v1/audio/transcriptions"
@@ -155,18 +156,19 @@ class HaasASREngine:
                 str(exe),
                 "--server",
                 "--backend",
-                str(_DEFAULT_MODEL),
+                str(_DEFAULT_BACKEND),
                 "-m",
-                "auto",
+                str(_DEFAULT_MODEL),
                 "--host",
                 "127.0.0.1",
                 "--port",
                 str(_DEFAULT_PORT),
+                # "--frequency-penalty", "0.2",
             ]
             if self._diarize:
                 serve_args += ["--diarize",
                                "--diarize-method", str(_DEFAULT_DIARIZE),
-                               # "--diarize-embedder", "auto",
+                               "--diarize-embedder", "auto",
                                "--sherpa-segment-model", "auto"]
                 log.info(f"Speaker diarization: {_DEFAULT_DIARIZE}.")
         else:
@@ -282,7 +284,7 @@ class HaasASREngine:
                 payload["response_format"] = "diarized_json"
                 payload["diarize"] = "true"
                 payload["diarize_method"] = str(_DEFAULT_DIARIZE)
-                # payload["diarize_embedder"] = "auto"
+                payload["diarize_embedder"] = "auto"
             else:
                 raise RuntimeError(f"Unsupported _BIN_EXE: {_BIN_EXE}")
         else:

@@ -96,7 +96,7 @@ class VADProcessor:
         self._was_trimmed = False  # True after trim_front (interim ASR active)
 
         # Pre-speech ring buffer: capture onset consonants before VAD triggers
-        self._pre_speech_chunks = 5
+        self._pre_speech_chunks = 5 + 10 # HACK: pad some frames
         self._pre_buffer = collections.deque(maxlen=self._pre_speech_chunks)
 
         # Silence timing
@@ -386,6 +386,7 @@ class VADProcessor:
     def _flush_segment(self):
         if not self._speech_buffer:
             return None
+        '''
         # Speech density check: discard segments where most chunks are below threshold
         if len(self._confidence_history) >= 4:
             effective_threshold = self.threshold if self.mode in ("silero", "firered") else 0.5
@@ -393,12 +394,13 @@ class VADProcessor:
             density = voiced / len(self._confidence_history)
             if density < 0.25:
                 dur = self._speech_samples / self.sample_rate
-                log.debug(
+                log.info(
                     f"Low speech density {density:.0%} ({voiced}/{len(self._confidence_history)}), "
                     f"discarding {dur:.1f}s segment"
                 )
                 self._reset()
                 return None
+        '''
         segment = np.concatenate(self._speech_buffer)
         self._reset()
         return segment
