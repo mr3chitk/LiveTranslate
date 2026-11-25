@@ -324,7 +324,7 @@ class HaasASREngine:
             if not text:
                 return None
             detected_lang = (
-                data.get("language") or data.get("detected_language") or "ja"
+                data.get("language") or data.get("detected_language") or self.language or "ja"
             )
             log.debug(f"Haas ASR -> {text[:60]} ({detected_lang})")
             return {
